@@ -148,9 +148,20 @@
 
     Polymer({
         is:"at-core-cardlayout",
-        cardLayoutData: "",
-        cardLayoutPos: "",
-        cardLayoutTimeout: "",
+        properties: {
+            cardLayoutData: {
+                type: String,
+                value: ""
+             },
+            cardLayoutPos: {
+                type: String,
+                value: ""
+             },
+            cardLayoutTimeout: {
+                type: String,
+                computed: ""
+            }
+         },
 
         isArray: function (card) {
             return Object.prototype.toString.call(card) === '[object Array]';
@@ -173,7 +184,8 @@
 
             Elements.forEach(function (elem) {
                 elem.classList.add("hidden");
-                container.appendChild(elem);
+                //container.appendChild(elem);
+                Polymer.dom(container).appendChild(elem);
             });
 
             var o = this.setupOptions(container, this.cardLayoutData);
@@ -185,7 +197,11 @@
 
             this.async(function () {
                 this.prepareElements(container, Elements, o);
-                this.calculatePositions(container, container.children.array(), o);
+                //this.calculatePositions(container, container.children.array(), o);
+                
+                // Converting HtmlCollection to array
+                var childArray = [].slice.call(container.children);
+                this.calculatePositions(container, childArray, o);
                 this.applyStyles(o);
 
                 var CalculatedCSS = {};
@@ -330,7 +346,6 @@
 
         //Calculate card positions and return as array
         calculatePositions: function (container, elements, o) {
-
             elements.forEach(function (element, i) {
                 var j = 0;
 
@@ -487,7 +502,11 @@
         positionAll: function (container, o) {
             console.log("cardlayout-positionAll");
             if (isEmpty(o.contentToAppend)) {
-                var Elements = o.selector ? container.children.array(o.selector) : container.children;
+                //var Elements = o.selector ? container.children.array(o.selector) : container.children;
+                
+                // Converting HtmlCollection to array
+                var childArray = [].slice.call(o.selector ? container.querySelectorAll(o.selector) : container.children); 
+                var Elements = childArray;
             }
             else {
                 var Elements = o.selector ? o.contentToAppend.filter(o.selector) : o.contentToAppend;
@@ -574,7 +593,8 @@
             var Elements;
 
             if (isEmpty(o.contentToAppend)) {
-                var Elements = o.selector ? container.children.array(o.selector) : container.children;
+                //var Elements = o.selector ? container.children.array(o.selector) : container.children;
+                var Elements = o.selector ? container.querySelectorAll(o.selector) : container.children;
             }
             else {
                 var Elements = o.selector ? o.contentToAppend.filter(o.selector) : o.contentToAppend;
