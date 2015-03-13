@@ -1,4 +1,5 @@
 <link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../at-core-theme/at-core-theme.html">
 
 <dom-module id="at-core-cardlayout">
     <style>
@@ -38,6 +39,7 @@
         }
     </style>
     <template>
+        <at-core-theme></at-core-theme>
         <div id="cards"></div>
     </template>
 </dom-module>
@@ -541,7 +543,8 @@
             o.currentDelay = 0;
             o.styleQueue = [];
 
-            this.job('positionCards', function () {
+            this.debounce('positionCards', function () {
+                
                 //console.log("cardlayout-positionCards");
                 o.animationOptions.complete = function () { if (--(o.iteration) <= 0) o.callback(o); };
 
@@ -586,7 +589,7 @@
                 });
 
                 return container;
-            }, 400);
+           }, 450);
         },
 
         resetElementsStyle: function (container, o) {
