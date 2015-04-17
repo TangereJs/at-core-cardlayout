@@ -22,12 +22,9 @@
             setTimeout(this.addCard.bind(this), 500);
         },
         addCard: function () {
-            
             var i = this.i++;
             var newCard = document.createElement("polymer-ipsum");
-            //newCard.setAttribute("cardPrefix", i + 1);
             newCard.cardPrefix = i+1;
-            //newCard.setAttribute("chars", ((i % 4) + 1) * 50);
             newCard.chars = ((i % 4) + 1) * 50;
             newCard.className = "card";
 
