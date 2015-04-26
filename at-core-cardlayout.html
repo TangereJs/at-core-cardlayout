@@ -287,15 +287,30 @@
             element.style.webkitTransform = element.style.mozTransform = element.style.msTransform = element.style.transform = 'translate(0px , 0px)';
         },
 
-        destroy: function () {
-            var container = this.$.cards,
-                options = this.cardLayoutData;
+        detached: function () {
+          
+          var container = this.$.cards, options = this.cardLayoutData;   
 
-            this.resetElementsStyle(container, options);
-            window.removeEventListener('resize', this.windowResizeCallback);
-            container.removeEventListener(options.customEvents, this.customEventsCallback);
-            return true;
+          if (this._windowResizeCallbackHandler) {
+            window.removeEventListener('resize', this._windowResizeCallbackHandler, true);
+            this._windowResizeCallbackHandler = null;
+          }
+
+          if (options.customEvents) {
+            container.addEventListener(options.customEvents, this.customEventsCallback.bind(container, container));
+          }          
         },
+
+        // *ma* seems to be not called anylonger, can be removed in next iteration
+        //destroy: function () {
+        //    var container = this.$.cards,
+        //        options = this.cardLayoutData;
+
+        //    this.resetElementsStyle(container, options);
+        //    window.removeEventListener('resize', this.windowResizeCallback);
+        //    container.removeEventListener(options.customEvents, this.customEventsCallback);
+        //    return true;
+        //},
 
         setupOptions: function (container, options) {
             var containerData = this.cardLayoutData;
@@ -315,10 +330,13 @@
         },
 
         windowResizeCallback: function (cardLayout) {
-            clearTimeout(this.cardLayoutTimeout);
-            this.cardLayoutTimeout = setTimeout(function () {
-                cardLayout.updateLayout();
-            }, 200);
+            //clearTimeout(this.cardLayoutTimeout);
+            //this.cardLayoutTimeout = setTimeout(function () {
+            //    cardLayout.updateLayout();
+          //}, 200);
+          cardLayout.async(function () {
+            cardLayout.updateLayout();
+          }, 200);
         },
 
         customEventsCallback: function (container) {
@@ -329,7 +347,7 @@
         setupContainerBindings: function (container, o) {
             if (o.containerResize) {
                 var cardLayout;
-                window.addEventListener('resize', this.windowResizeCallback.bind(cardLayout, this), true);
+                window.addEventListener('resize', this._windowResizeCallbackHandler = this.windowResizeCallback.bind(cardLayout, this), true);
             }
 
             if (o.customEvents) {
