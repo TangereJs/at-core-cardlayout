@@ -480,7 +480,8 @@
             if (o.cardMinWidth != 0 && !o.forceWidth) {
 
                 var cw = o.containerWidth - o.paddingLeft - o.paddingRight; // container width
-                var cmw = (this.getBoundingClientRect().width > o.cardWidth) ? o.cardWidth : o.cardMinWidth;
+              //var cmw = (this.getBoundingClientRect().width > o.cardWidth) ? o.cardWidth : o.cardMinWidth;
+                var cmw = (this.getBoundingClientRect().width < o.cardMinWidth) ? cardMinWidth : o.cardWidth;
 
                 var cwo = getOuterWidth(Elements[0], true) - getWidth(Elements[0]);
 
@@ -631,7 +632,7 @@
         {
             selector: '.card',
             cardWidth: 400,     // outerwidth of one card column
-            cardMinWidth: 300,
+            cardMinWidth: 316,
             currentCardWidth: 0,
             maxCols: 3,
             animate: true,
