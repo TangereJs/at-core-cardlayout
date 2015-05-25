@@ -496,6 +496,9 @@
         var cwo = getOuterWidth(Elements[0], true) - getWidth(Elements[0]);
 
         var cols = Math.floor(cw / o.cardMinWidth); // number of card cols to show
+        if (cols < 1) cols = 1;
+        if (cw < o.cardMinWidt) cw = o.cardMinWidt;
+
         if (o.maxCols && cols > o.maxCols) cols = o.maxCols;
 
         var ocw = Math.floor(cw / cols); // outer card width
