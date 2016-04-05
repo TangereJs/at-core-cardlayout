@@ -181,6 +181,12 @@
     removeListeners: function () {
       this.removeEventListener('card-changed', this.updateLayout.bind(this));
     },
+    
+    clear: function () {
+      var container = this.$.cards;
+      container.innerHTML = "";
+      container.style.height = "0px";      
+    },
 
     append: function (Elements) {
       var container = this.$.cards;
