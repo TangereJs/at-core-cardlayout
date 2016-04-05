@@ -373,6 +373,9 @@
 
     //Calculate card positions and return as array
     calculatePositions: function (container, elements, o) {
+      
+      var containerHeight = 0;
+      
       elements.forEach(function (element, i) {
         var j = 0;
 
@@ -452,6 +455,8 @@
           ElementRight = o.currentPos[o.IndexStart].left + o.ElementWidth;
 
         o.currentPos[o.IndexStart].top = o.ElementTop + o.ElementHeight;
+        
+        if((o.ElementTop + o.ElementHeight) > containerHeight) containerHeight = o.ElementTop + o.ElementHeight;
 
         if (ElementRight < LastSpanRight) {
           o.currentPos.splice(o.IndexStart + 1, o.IndexEnd - o.IndexStart - 1, {
@@ -462,6 +467,9 @@
           o.currentPos.splice(o.IndexStart + 1, o.IndexEnd - o.IndexStart - 1);
         }
       })
+      
+      // set container height to cover all cards
+      container.style.height = containerHeight + "px";
     },
 
     //Set styles of cards as required
