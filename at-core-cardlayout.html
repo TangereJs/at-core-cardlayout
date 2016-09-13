@@ -200,6 +200,8 @@
         //container.appendChild(elem);
         Polymer.dom(container).appendChild(elem);
       });
+      
+      Polymer.dom.flush();
 
       var o = this.setupOptions(container, this.cardLayoutData);
       o.currentPos = this.cardLayoutPos;
