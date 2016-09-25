@@ -2,41 +2,47 @@
 <link rel="import" href="../at-core-theme/at-core-theme.html">
 
 <dom-module id="at-core-cardlayout">
-  <style>
-    :host {
-      width: 100%;
-      display: block;      
-    }
-    .card {      
-      box-shadow: 0 1px 2px #aaa;            
-      box-shadow: rgba(0, 0, 0, 0.098) 0px 2px 4px, rgba(0, 0, 0, 0.1) 0px 0px 3px;
-      background: white;
-      margin: 15px;
-      border-radius: 3px;
-      overflow: hidden;
-      user-select: none;
-      -webkit-touch-callout: none;
-      -webkit-user-select: none;
-      -khtml-user-select: none;
-      -moz-user-select: none;
-      -ms-user-select: none;
-    }
-    .cardDelete {
-      transition: all 0.2s ease-in-out;
-      transform: scale(0.2);
-      -webkit-transform: scale(0.2);
-    }
-    .hidden {
-      visibility: hidden;
-    }
-    .dragging {
-      z-index: 2;
-      -webkit-transition: none;
-      transition: none;
-      cursor: move !important;
-    }
-  </style>
+
   <template>
+    <style>
+      :host {
+        width: 100%;
+        display: block;
+      }
+
+      .card {
+        box-shadow: 0 1px 2px #aaa;
+        box-shadow: rgba(0, 0, 0, 0.098) 0px 2px 4px, rgba(0, 0, 0, 0.1) 0px 0px 3px;
+        background: white;
+        margin: 15px;
+        border-radius: 3px;
+        overflow: hidden;
+        user-select: none;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -khtml-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+      }
+
+      .cardDelete {
+        transition: all 0.2s ease-in-out;
+        transform: scale(0.2);
+        -webkit-transform: scale(0.2);
+      }
+
+      .hidden {
+        visibility: hidden;
+      }
+
+      .dragging {
+        z-index: 2;
+        -webkit-transition: none;
+        transition: none;
+        cursor: move !important;
+      }
+    </style>
+
     <at-core-theme></at-core-theme>
     <div id="cards"></div>
   </template>
@@ -181,11 +187,11 @@
     removeListeners: function () {
       this.removeEventListener('card-changed', this.updateLayout.bind(this));
     },
-    
+
     clear: function () {
       var container = this.$.cards;
       container.innerHTML = "";
-      container.style.height = "0px";      
+      container.style.height = "0px";
     },
 
     append: function (Elements) {
@@ -200,7 +206,7 @@
         //container.appendChild(elem);
         Polymer.dom(container).appendChild(elem);
       });
-      
+
       Polymer.dom.flush();
 
       var o = this.setupOptions(container, this.cardLayoutData);
@@ -284,14 +290,14 @@
       for (var key in obj) {
         if (obj.hasOwnProperty(key)) {
           switch (key) {
-          case "left":
-          case "top":
-          case "height":
-          case "width":
-            obj[key] = obj[key] + "px";
-            break;
-          default:
-            break;
+            case "left":
+            case "top":
+            case "height":
+            case "width":
+              obj[key] = obj[key] + "px";
+              break;
+            default:
+              break;
           }
           element.style[key] = obj[key];
         }
@@ -338,7 +344,7 @@
       this.cardLayoutData = newOptions;
 
       newOptions._animate = newOptions.animate && isEmpty(newOptions.contentToAppend);
-      this.reset.callback = newOptions.persistentCallback && newOptions.callback ? newOptions.callback : function () {};
+      this.reset.callback = newOptions.persistentCallback && newOptions.callback ? newOptions.callback : function () { };
       return newOptions;
     },
 
@@ -381,9 +387,9 @@
 
     //Calculate card positions and return as array
     calculatePositions: function (container, elements, o) {
-      
+
       var containerHeight = 0;
-      
+
       elements.forEach(function (element, i) {
         var j = 0;
 
@@ -406,11 +412,11 @@
         o.BestScore = o.scoreFunction(o);
 
         for (var i = 1;
-          (i < o.currentPos.length) && (o.currentPos[i].left + o.ElementWidth <= (o.containerWidth - o.currentContainerMargin)); i++) {
+          (i < o.currentPos.length) && (o.currentPos[i].left + o.ElementWidth <= (o.containerWidth - o.currentContainerMargin)) ; i++) {
           o.TestedLeft = o.currentPos[i].left;
           o.TestedTop = o.currentPos[i].top;
           for (j = i + 1;
-            (j < o.currentPos.length) && (o.currentPos[j].left - o.currentPos[i].left < o.ElementWidth); j++) {
+            (j < o.currentPos.length) && (o.currentPos[j].left - o.currentPos[i].left < o.ElementWidth) ; j++) {
             o.TestedTop = Math.max(o.TestedTop, o.currentPos[j].top);
           }
           var NewScore = o.scoreFunction(o);
@@ -463,8 +469,8 @@
           ElementRight = o.currentPos[o.IndexStart].left + o.ElementWidth;
 
         o.currentPos[o.IndexStart].top = o.ElementTop + o.ElementHeight;
-        
-        if((o.ElementTop + o.ElementHeight) > containerHeight) containerHeight = o.ElementTop + o.ElementHeight;
+
+        if ((o.ElementTop + o.ElementHeight) > containerHeight) containerHeight = o.ElementTop + o.ElementHeight;
 
         if (ElementRight < LastSpanRight) {
           o.currentPos.splice(o.IndexStart + 1, o.IndexEnd - o.IndexStart - 1, {
@@ -475,7 +481,7 @@
           o.currentPos.splice(o.IndexStart + 1, o.IndexEnd - o.IndexStart - 1);
         }
       })
-      
+
       // set container height to cover all cards
       container.style.height = containerHeight + "px";
     },
@@ -687,9 +693,9 @@
 
     reset: {
       animationOptions: {
-        complete: function () {}
+        complete: function () { }
       },
-      callback: function () {},
+      callback: function () { },
       contentToAppend: {}
     },
 
