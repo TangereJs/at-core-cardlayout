@@ -219,6 +219,7 @@
       this.setElementWidth(container.children, o);
 
       this.async(function () {
+        
         this.prepareElements(container, Elements, o);
         //this.calculatePositions(container, container.children.array(), o);
 
@@ -246,7 +247,7 @@
         });
 
         return container;
-      }, 200);
+      }, 250);
     },
 
     appendContainer: function (options) {
@@ -264,6 +265,7 @@
     },
 
     updateLayout: function (options) {
+      //console.log("cardlayout updateLayout");
       if (!options) {
         options = this.cardLayoutData;
       }
@@ -322,17 +324,6 @@
       }
     },
 
-    // *ma* seems to be not called anylonger, can be removed in next iteration
-    //destroy: function () {
-    //    var container = this.$.cards,
-    //        options = this.cardLayoutData;
-
-    //    this.resetElementsStyle(container, options);
-    //    window.removeEventListener('resize', this.windowResizeCallback);
-    //    container.removeEventListener(options.customEvents, this.customEventsCallback);
-    //    return true;
-    //},
-
     setupOptions: function (container, options) {
       var containerData = this.cardLayoutData;
 
@@ -389,13 +380,13 @@
 
     //Calculate card positions and return as array
     calculatePositions: function (container, elements, o) {
-
+      
       var containerHeight = 0;
-
+      
       elements.forEach(function (element, i) {
         var j = 0;
 
-        o.ElementWidth = getOuterWidth(element, true);
+        o.ElementWidth = o.currentCardElementWidth; // use calculated width for all cards, as getOuterWidth(element, true) might return wider values for a short time (chrome bug?)
         o.ElementHeight = getOuterHeight(element, true);
         o.ElementTop = 0;
         o.IndexStart = 0;
@@ -412,11 +403,14 @@
         o.ElementTop = o.TestedTop;
         o.IndexEnd = j;
         o.BestScore = o.scoreFunction(o);
-
+        //console.log(element.id + "---" + " o.ElementWidth" + o.ElementWidth + " o.containerWidth " + o.containerWidth + " o.currentPos[i].left " + o.currentPos[0].left + " " + o.currentContainerMargin);
+        
         for (var i = 1;
-          (i < o.currentPos.length) && (o.currentPos[i].left + o.ElementWidth <= (o.containerWidth - o.currentContainerMargin)) ; i++) {
+          (i < o.currentPos.length) && (o.currentPos[i].left + o.ElementWidth <= (2 + o.containerWidth - o.currentContainerMargin)) ; i++) {
+
           o.TestedLeft = o.currentPos[i].left;
           o.TestedTop = o.currentPos[i].top;
+          
           for (j = i + 1;
             (j < o.currentPos.length) && (o.currentPos[j].left - o.currentPos[i].left < o.ElementWidth) ; j++) {
             o.TestedTop = Math.max(o.TestedTop, o.currentPos[j].top);
@@ -435,14 +429,14 @@
             left: o.currentPos[o.IndexStart].left + o.xPadding,
             top: o.ElementTop + o.yPadding
           };
-
+        //console.log(element.id + " " + pos.left + " " + pos.top);
         if (curpos.top != pos.top || curpos.left != pos.left) {
           var aniObj = {
             el: element,
             f: 'style',
             d: 0
           };
-
+         
           if (o._animate && !element.classList.contains("noanim")) {
             var curoffset = getOffset(element),
 
@@ -531,6 +525,7 @@
 
         o.currentCardWidth = ocw - cwo; // inner width of a card
         o.currentContainerMargin = Math.floor((o.containerWidth - (ocw * cols)) / 2);
+        o.currentCardElementWidth = ocw;
 
         this.$.cards.style.marginLeft = o.currentContainerMargin + "px";
         this.$.cards.style.marginRight = o.currentContainerMargin + "px";
@@ -563,7 +558,7 @@
     },
 
     positionAll: function (container, o) {
-      console.log("cardlayout-positionAll");
+      //console.log("cardlayout-positionAll");
       if (isEmpty(o.contentToAppend)) {
         //var Elements = o.selector ? container.children.array(o.selector) : container.children;
 
@@ -654,7 +649,7 @@
         });
 
         return container;
-      }, 450);
+      }, 200);
     },
 
     resetElementsStyle: function (container, o) {
