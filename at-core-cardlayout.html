@@ -183,11 +183,16 @@
     },
 
     addListeners: function () {
-      this.addEventListener('card-changed', this.updateLayout.bind(this));
+      this.$.cards.addEventListener('card-changed', this._refreshLayout.bind(this));
     },
 
     removeListeners: function () {
-      this.removeEventListener('card-changed', this.updateLayout.bind(this));
+      this.$.cards.removeEventListener('card-changed', this._refreshLayout.bind(this));
+    },
+
+    _refreshLayout: function () {
+      console.log("card-changed _refreshLayout");
+      this.updateLayout();
     },
 
     clear: function () {
