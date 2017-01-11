@@ -1,5 +1,5 @@
-<link rel="import" href="../polymer/polymer.html">
-<link rel="import" href="../at-core-theme/at-core-theme.html">
+<link rel="import" href="../tangere/tangere.html">
+<link rel="import" href="../at-theme/at-theme.html">
 <link rel="import" href="../at-core-style-classes/at-core-style-classes.html">
 
 <dom-module id="at-core-cardlayout">
@@ -44,8 +44,6 @@
         cursor: move !important;
       }
     </style>
-
-    <at-core-theme></at-core-theme>
     <div id="cards"></div>
   </template>
 </dom-module>
@@ -162,7 +160,6 @@
 
   Polymer({
     is: "at-core-cardlayout",
-    _scopeCssViaAttr: true,
     properties: {
       cardLayoutData: {
         type: String,
@@ -224,7 +221,7 @@
       this.setElementWidth(container.children, o);
 
       this.async(function () {
-        
+
         this.prepareElements(container, Elements, o);
         //this.calculatePositions(container, container.children.array(), o);
 
@@ -385,9 +382,9 @@
 
     //Calculate card positions and return as array
     calculatePositions: function (container, elements, o) {
-      
+
       var containerHeight = 0;
-      
+
       elements.forEach(function (element, i) {
         var j = 0;
 
@@ -409,13 +406,13 @@
         o.IndexEnd = j;
         o.BestScore = o.scoreFunction(o);
         //console.log(element.id + "---" + " o.ElementWidth" + o.ElementWidth + " o.containerWidth " + o.containerWidth + " o.currentPos[i].left " + o.currentPos[0].left + " " + o.currentContainerMargin);
-        
+
         for (var i = 1;
           (i < o.currentPos.length) && (o.currentPos[i].left + o.ElementWidth <= (2 + o.containerWidth - o.currentContainerMargin)) ; i++) {
 
           o.TestedLeft = o.currentPos[i].left;
           o.TestedTop = o.currentPos[i].top;
-          
+
           for (j = i + 1;
             (j < o.currentPos.length) && (o.currentPos[j].left - o.currentPos[i].left < o.ElementWidth) ; j++) {
             o.TestedTop = Math.max(o.TestedTop, o.currentPos[j].top);
@@ -441,7 +438,7 @@
             f: 'style',
             d: 0
           };
-         
+
           if (o._animate && !element.classList.contains("noanim")) {
             var curoffset = getOffset(element),
 
