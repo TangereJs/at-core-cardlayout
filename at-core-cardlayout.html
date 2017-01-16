@@ -520,7 +520,8 @@
         if (cols < 1) cols = 1;
         if (cw < o.cardMinWidt) cw = o.cardMinWidt;
 
-        if (o.maxCols && cols > o.maxCols) cols = o.maxCols;
+        // *todo* layout ignores maxCols/cols - so cols need to be added or maxCols should be removed
+        //if (o.maxCols && cols > o.maxCols) cols = o.maxCols;
 
         var ocw = Math.floor(cw / cols); // outer card width
         if (ocw > cmw) ocw = cmw;
