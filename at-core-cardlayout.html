@@ -510,6 +510,9 @@
     setElementWidth: function (Elements, o) {
       if (o.cardMinWidth != 0 && !o.forceWidth) {
 
+        // on large screens make cards a little wider by default, should maybe become configuration options
+        if (o.containerWidth > 1000 && o.cardMinWidth < 380) o.cardMinWidth = 380;
+
         var cw = o.containerWidth - o.paddingLeft - o.paddingRight; // container width
         //var cmw = (this.getBoundingClientRect().width > o.cardWidth) ? o.cardWidth : o.cardMinWidth;
         var cmw = (this.getBoundingClientRect().width < o.cardMinWidth) ? o.cardMinWidth : o.cardWidth;
@@ -518,7 +521,8 @@
 
         var cols = Math.floor(cw / o.cardMinWidth); // number of card cols to show
         if (cols < 1) cols = 1;
-        if (cw < o.cardMinWidt) cw = o.cardMinWidt;
+        if (cw < o.cardMinWidth) cw = o.cardMinWidth;
+
 
         // *todo* layout ignores maxCols/cols - so cols need to be added or maxCols should be removed
         //if (o.maxCols && cols > o.maxCols) cols = o.maxCols;
