@@ -249,7 +249,7 @@
         });
 
         return container;
-      }, 250);
+      }, 100);
     },
 
     appendContainer: function (options) {
@@ -522,7 +522,6 @@
         var cols = Math.floor(cw / o.cardMinWidth); // number of card cols to show
         if (cols < 1) cols = 1;
         if (cw < o.cardMinWidth) cw = o.cardMinWidth;
-
 
         // *todo* layout ignores maxCols/cols - so cols need to be added or maxCols should be removed
         //if (o.maxCols && cols > o.maxCols) cols = o.maxCols;
