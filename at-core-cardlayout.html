@@ -248,7 +248,10 @@
         elem.style.position = "relative";
         var div = document.createElement("div");
         div.classList = "cardContainer";
-        div.id = "c-" + elem.id;
+        div.id = elem.id;
+        elem.id = "c-" + elem.id;
+        div.sort = elem.sort;
+        div.version = elem.version;
         div.appendChild(elem);
         Polymer.dom(container).appendChild(div);
       });
