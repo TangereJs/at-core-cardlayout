@@ -29,11 +29,6 @@
         -ms-user-select: none;
       }
 
-
-      .cardContainer {
-        margin: 16px 8px 0 8px;  
-      }
-
       .cardDelete {
         transition: all 0.2s ease-in-out;
         transform: scale(0.2);
@@ -49,19 +44,6 @@
         -webkit-transition: none;
         transition: none;
         cursor: move !important;
-      }
-
-      #cards {
-        max-width: 512px;
-        width: 100%;
-        margin: 0 auto;
-        column-count: 1;
-      }
-
-      .card {
-        display: inline-block;
-        margin: 0 0 1em;
-        width: 100%;
       }
     </style>
     <at-core-resize-sensor id="resizeSensor" on-resize-sensed="_onResize"></at-core-resize-sensor>
@@ -234,7 +216,7 @@
     clear: function () {
       var container = this.$.cards;
       container.innerHTML = "";
-      //container.style.height = "0px";
+      container.style.height = "0px";
     },
 
     append: function (Elements) {
@@ -245,15 +227,47 @@
       }
 
       Elements.forEach(function (elem) {
-        elem.style.position = "relative";
-        var div = document.createElement("div");
-        div.classList = "cardContainer";
-        div.id = "c-" + elem.id;
-        div.appendChild(elem);
-        Polymer.dom(container).appendChild(div);
+        elem.classList.add("hidden");
+        //container.appendChild(elem);
+        Polymer.dom(container).appendChild(elem);
       });
 
       Polymer.dom.flush();
+
+      var o = this.setupOptions(container, this.cardLayoutData);
+      o.currentPos = this.cardLayoutPos;
+      o.styleQueue = [];
+
+      this.preparePositionsOptions(container, o);
+      this.setElementWidth(container.children, o);
+   
+      // this.async(function () {
+
+        this.prepareElements(container, Elements, o);
+        //this.calculatePositions(container, container.children.array(), o);
+
+        // Converting HtmlCollection to array
+        var childArray = [].slice.call(container.children);
+        this.calculatePositions(container, childArray, o);
+        this.applyStyles(o);
+
+        var CalculatedCSS = {};
+        CalculatedCSS.visibility = "visible";
+        if (container.style.position || "static" == 'static') {
+          CalculatedCSS.position = 'relative';
+        }
+
+        if (o.forceWidth && o.containerWidthStep > 0) {
+          CalculatedCSS.width = o.containerWidthStep * (parseInt(getWidth(container) / o.containerWidthStep, 10))
+        }
+
+        this.setStyle(container, CalculatedCSS);
+
+        this.cardLayoutPos = o.currentPos;
+
+        Elements.forEach(function (elem) {
+          elem.classList.remove("hidden");
+        });
 
         return container;
       //}, 250);
@@ -277,6 +291,15 @@
     updateLayout: function (options) {
       console.log("cardlayout updateLayout");
 
+      if (!options) {
+        options = this.cardLayoutData;
+      }
+
+      var container = this.$.cards,
+        o = this.setupOptions(container, options);
+      this.positionAll(container, o);
+
+      return container;
     },
 
     animateCard: function (element, style, delay, animationOptions) {
@@ -381,7 +404,7 @@
 
     //Calculate card positions and return as array
     calculatePositions: function (container, elements, o) {
-      debugger;
+
       var containerHeight = 0;
       
       elements.forEach(function (element, i) {
@@ -566,7 +589,7 @@
 
     positionAll: function (container, o) {
       //console.log("cardlayout-positionAll");
-      debugger;
+
       this._active = true;
 
       if (isEmpty(o.contentToAppend)) {
@@ -719,6 +742,20 @@
 
     ready: function (options) {
 
+      var container = this.$.cards,
+        o = this.setupOptions(container, options),
+        c = this.newContent(o.contentToAppend);
+
+      container.style.visibility = "hidden";
+      this.setupContainerBindings(container, o);
+
+      if (c) {
+        container.appendContainer(c);
+        this.positionAll(container, o);
+      } else {
+        this.positionAll(container, o);
+      }
+      return container;
     }
   });
 </script>
