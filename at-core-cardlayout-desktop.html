@@ -1,0 +1,761 @@
+<link rel="import" href="../tangere/tangere.html">
+<link rel="import" href="../at-theme/at-theme.html">
+<link rel="import" href="../at-core-style-classes/at-core-style-classes.html">
+<link rel="import" href="../iron-resizable-behavior/iron-resizable-behavior.html">
+<link rel="import" href="../at-core-resize-sensor/at-core-resize-sensor.html">
+
+<dom-module id="at-core-cardlayout-desktop">
+
+  <template>
+    <style include="at-core-style-classes"></style>
+    <style>
+      :host {
+        width: 100%;
+        display: block;
+      }
+
+      .card {
+        box-shadow: 0 1px 2px #aaa;
+        box-shadow: rgba(0, 0, 0, 0.098) 0px 2px 4px, rgba(0, 0, 0, 0.1) 0px 0px 3px;
+        background: white;
+        margin: 15px;
+        border-radius: 3px;
+        overflow: hidden;
+        user-select: none;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -khtml-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+      }
+
+      .cardDelete {
+        transition: all 0.2s ease-in-out;
+        transform: scale(0.2);
+        -webkit-transform: scale(0.2);
+      }
+
+      .hidden {
+        visibility: hidden;
+      }
+
+      .dragging {
+        z-index: 2;
+        -webkit-transition: none;
+        transition: none;
+        cursor: move !important;
+      }
+    </style>
+    <at-core-resize-sensor id="resizeSensor" on-resize-sensed="_onResize"></at-core-resize-sensor>
+    <div id="cards" on-content-changed="_refreshLayout"></div>
+  </template>
+</dom-module>
+
+<script>
+  var extend = function (out) {
+    out = out || {};
+
+    for (var i = 1; i < arguments.length; i++) {
+      if (!arguments[i])
+        continue;
+
+      for (var key in arguments[i]) {
+        if (arguments[i].hasOwnProperty(key))
+          out[key] = arguments[i][key];
+      }
+    }
+
+    return out;
+  };
+
+  function isEmpty(obj) {
+    for (var prop in obj) {
+      if (obj.hasOwnProperty(prop))
+        return false;
+    }
+    return true;
+  }
+
+  function isVisible(obj) {
+    return obj.offsetWidth > 0 || obj.offsetHeight > 0;
+  }
+
+  function stylePropToInt(styleProp) {
+    var stylePropRes = parseInt(styleProp);
+    return !stylePropRes ? 0 : stylePropRes;
+  }
+
+  function getPosition(obj) {
+    var curleft = curtop = 0;
+    if (obj.offsetParent) {
+      do {
+        curleft += obj.offsetLeft;
+        curtop += obj.offsetTop;
+      } while (obj = obj.offsetParent);
+    }
+    return {
+      left: curleft,
+      top: curtop
+    };
+  }
+
+  function getWidth(elem) {
+    var outerWidth = elem.offsetWidth;
+
+    // *ma* border-box is default box-sizing, border/padding included in offsetWidth -->
+    return outerWidth;
+    //var computedStyle = window.getComputedStyle(elem, null);
+    //var borderLeft = parseFloat(computedStyle.getPropertyValue('border-left')) || 0;
+    //var borderRight = parseFloat(computedStyle.getPropertyValue('border-right')) || 0;
+    //var paddingLeft = parseFloat(computedStyle.getPropertyValue('padding-left')) || 0;
+    //var paddingRight = parseFloat(computedStyle.getPropertyValue('padding-right')) || 0;
+    //return outerWidth - borderLeft - borderRight - paddingLeft - paddingRight;
+  }
+
+  function getOuterWidth(elem, withMargins) {
+    var outerWidth = elem.offsetWidth;
+    if (!withMargins) {
+      return outerWidth;
+    }
+
+    var computedStyle = window.getComputedStyle(elem, null);
+    var marginLeft = parseFloat(computedStyle.getPropertyValue('margin-left')) || 0;
+    var marginRight = parseFloat(computedStyle.getPropertyValue('margin-right')) || 0;
+    return outerWidth + marginLeft + marginRight;
+  }
+
+  function getHeight(elem) {
+    var outerHeight = elem.offsetHeight;
+    var computedStyle = window.getComputedStyle(elem, null);
+    var borderTop = parseFloat(computedStyle.getPropertyValue('border-top')) || 0;
+    var borderBottom = parseFloat(computedStyle.getPropertyValue('border-bottom')) || 0;
+    var paddingTop = parseFloat(computedStyle.getPropertyValue('padding-top')) || 0;
+    var paddingBottom = parseFloat(computedStyle.getPropertyValue('padding-bottom')) || 0;
+    return outerHeight - borderTop - borderBottom - paddingTop - paddingBottom;
+  }
+
+  function getOuterHeight(elem, withMargins) {
+    var outerHeight = elem.offsetHeight;
+    if (!withMargins) {
+      return outerWidth;
+    }
+
+    var computedStyle = window.getComputedStyle(elem, null);
+    var marginTop = parseFloat(computedStyle.getPropertyValue('margin-top')) || 0;
+    var marginBottom = parseFloat(computedStyle.getPropertyValue('margin-bottom')) || 0;
+    return outerHeight + marginTop + marginBottom;
+  }
+
+  function getOffset(obj) { //TODO Fix either this one or getPosition method
+    var curleft = curtop = 0;
+
+    if (obj) {
+      do {
+        curleft += obj.offsetLeft;
+        curtop += obj.offsetTop;
+      } while (obj = obj.offsetParent);
+    }
+    return {
+      left: curleft,
+      top: curtop
+    };
+  }
+
+  Polymer({
+    is: "at-core-cardlayout-desktop",
+    behaviors: [
+      Polymer.IronResizableBehavior
+    ],
+    properties: {
+      cardLayoutData: {
+        type: String,
+        value: ""
+      },
+      cardLayoutPos: {
+        type: String,
+        value: ""
+      },
+      cardLayoutTimeout: {
+        type: String,
+        computed: ""
+      }
+    },
+    listeners: {
+      'iron-resize': '_onIronResize',
+      'content-changed': '_refreshLayout',
+      'card-changed': '_refreshLayout'
+    },
+
+    _onIronResize: function (e) {
+      //console.log("card layout iron resize");
+    },
+
+    _onResize: function (e) {      
+      if (this._cw != e.detail.value.width) {
+        if (this._cw || this._active) {
+          // changed width detected
+          this.updateLayout();
+          console.log("_onResize updateLayout after detected resize");
+        }
+        this._cw = e.detail.value.width;
+      }
+    },
+
+    isArray: function (card) {
+      return Object.prototype.toString.call(card) === '[object Array]';
+    },
+
+
+    _refreshLayout: function () {     
+      this.debounce("refresh-layout", function () {
+        console.log("content-changed _refreshLayout");
+        this.updateLayout();
+      }, 100);
+    },
+
+    clear: function () {
+      var container = this.$.cards;
+      container.innerHTML = "";
+      container.style.height = "0px";
+    },
+
+    append: function (Elements) {
+      var container = this.$.cards;
+
+      if (!(this.isArray(Elements))) {
+        Elements = [Elements];
+      }
+
+      Elements.forEach(function (elem) {
+        elem.classList.add("hidden");
+        //container.appendChild(elem);
+        Polymer.dom(container).appendChild(elem);
+      });
+
+      Polymer.dom.flush();
+
+      var o = this.setupOptions(container, this.cardLayoutData);
+      o.currentPos = this.cardLayoutPos;
+      o.styleQueue = [];
+
+      this.preparePositionsOptions(container, o);
+      this.setElementWidth(container.children, o);
+   
+      // this.async(function () {
+
+        this.prepareElements(container, Elements, o);
+        //this.calculatePositions(container, container.children.array(), o);
+
+        // Converting HtmlCollection to array
+        var childArray = [].slice.call(container.children);
+        this.calculatePositions(container, childArray, o);
+        this.applyStyles(o);
+
+        var CalculatedCSS = {};
+        CalculatedCSS.visibility = "visible";
+        if (container.style.position || "static" == 'static') {
+          CalculatedCSS.position = 'relative';
+        }
+
+        if (o.forceWidth && o.containerWidthStep > 0) {
+          CalculatedCSS.width = o.containerWidthStep * (parseInt(getWidth(container) / o.containerWidthStep, 10))
+        }
+
+        this.setStyle(container, CalculatedCSS);
+
+        this.cardLayoutPos = o.currentPos;
+
+        Elements.forEach(function (elem) {
+          elem.classList.remove("hidden");
+        });
+
+        return container;
+      //}, 250);
+     
+    },
+
+    appendContainer: function (options) {
+      var container = this.$.cards,
+        o = this.setupOptions(container, options),
+        c = this.newContent(o.contentToAppend);
+
+      if (c) {
+        container.appendContainer(c);
+        c.filter(o.loadCheckSelector).imagesLoaded(function () {
+          this.positionAll(container, o);
+        });
+      }
+      return container;
+    },
+
+    updateLayout: function (options) {
+      console.log("cardlayout updateLayout");
+
+      if (!options) {
+        options = this.cardLayoutData;
+      }
+
+      var container = this.$.cards,
+        o = this.setupOptions(container, options);
+      this.positionAll(container, o);
+
+      return container;
+    },
+
+    animateCard: function (element, style, delay, animationOptions) {
+      //console.log("cardlayout-animateCard");
+      var s = element.style;
+
+      var translate = 'translate(' + style.left + 'px' + ',' + style.top + 'px' + ')';
+      s.webkitTransitionDuration = s.mozTransitionDuration = s.msTransitionDuration = s.transitionDuration = "350ms";
+      s.webkitTransitionDelay = s.mozTransitionDelay = s.msTransitionDelay = s.transitionDelay = delay;
+      s.webkitTransform = s.mozTransform = s.msTransform = s.transform = translate;
+      element.addEventListener('webkitTransitionEnd', this.setStyle(element, style));
+      element.addEventListener('transitionend', this.setStyle(element, style));
+    },
+
+    setStyle: function (element, obj) {
+      for (var key in obj) {
+        if (obj.hasOwnProperty(key)) {
+          switch (key) {
+            case "left":
+            case "top":
+            case "height":
+            case "width":
+              obj[key] = obj[key] + "px";
+              break;
+            default:
+              break;
+          }
+          element.style[key] = obj[key];
+        }
+      }
+      element.style.webkitTransform = element.style.mozTransform = element.style.msTransform = element.style.transform = 'translate(0px , 0px)';
+    },
+
+    detached: function () {
+
+      var container = this.$.cards,
+        options = this.cardLayoutData;
+
+      if (this._windowResizeCallbackHandler) {
+        window.removeEventListener('resize', this._windowResizeCallbackHandler, true);
+        this._windowResizeCallbackHandler = null;
+      }
+
+      if (options.customEvents) {
+        container.addEventListener(options.customEvents, this.customEventsCallback.bind(container, container));
+      }
+    },
+
+    setupOptions: function (container, options) {
+      var containerData = this.cardLayoutData;
+
+      var newOptions = extend({},
+        this.atLayoutCardDefaults,
+        containerData,
+        this.reset,
+        options
+      );
+
+      this.cardLayoutData = newOptions;
+
+      newOptions._animate = newOptions.animate && isEmpty(newOptions.contentToAppend);
+      this.reset.callback = newOptions.persistentCallback && newOptions.callback ? newOptions.callback : function () { };
+      return newOptions;
+    },
+
+    windowResizeCallback: function (cardLayout) {
+      //clearTimeout(this.cardLayoutTimeout);
+      //this.cardLayoutTimeout = setTimeout(function () {
+      //    cardLayout.updateLayout();
+      //}, 200);
+      cardLayout.async(function () {
+        cardLayout.updateLayout();
+      }, 200);
+    },
+
+    customEventsCallback: function (container) {
+      clearTimeout(this.cardLayoutTimeout);
+      this.cardLayoutTimeout = setTimeout(function () {
+        cardLayout.updateLayout();
+      }, 300);
+    },
+
+    setupContainerBindings: function (container, o) {
+      if (o.containerResize) {
+        var cardLayout;
+        window.addEventListener('resize', this._windowResizeCallbackHandler = this.windowResizeCallback.bind(cardLayout, this), true);
+      }
+
+      if (o.customEvents) {
+        container.addEventListener(o.customEvents, this.customEventsCallback.bind(container, container));
+      }
+
+      return container;
+    },
+
+    newContent: function (content) {
+      if ((typeof content === 'object' && !isEmpty(content)) || (typeof content === 'string' && content.length)) {
+        return content;
+      }
+      return false;
+    },
+
+    //Calculate card positions and return as array
+    calculatePositions: function (container, elements, o) {
+
+      var containerHeight = 0;
+      
+      elements.forEach(function (element, i) {
+        var j = 0;
+
+        o.ElementWidth = o.currentCardElementWidth; // use calculated width for all cards, as getOuterWidth(element, true) might return wider values for a short time (chrome bug?)
+        o.ElementHeight = getOuterHeight(element, true);
+        o.ElementTop = 0;
+        o.IndexStart = 0;
+        o.IndexEnd = 0;
+        o.BestScore = 0;
+        o.TestedTop = 0;
+        o.TestedLeft = 0;
+        o.TestedTop = o.currentPos[0].top;
+
+        for (j = 1; j < o.currentPos.length && o.currentPos[j].left < o.ElementWidth; j++) {
+          o.TestedTop = Math.max(o.TestedTop, o.currentPos[j].top);
+        }
+
+        o.ElementTop = o.TestedTop;
+        o.IndexEnd = j;
+        o.BestScore = o.scoreFunction(o);
+        //console.log(element.id + "---" + " o.ElementWidth" + o.ElementWidth + " o.containerWidth " + o.containerWidth + " o.currentPos[i].left " + o.currentPos[0].left + " " + o.currentContainerMargin);
+
+        for (var i = 1;
+          (i < o.currentPos.length) && (o.currentPos[i].left + o.ElementWidth <= (2 + o.containerWidth - o.currentContainerMargin)) ; i++) {
+
+          o.TestedLeft = o.currentPos[i].left;
+          o.TestedTop = o.currentPos[i].top;
+
+          for (j = i + 1;
+            (j < o.currentPos.length) && (o.currentPos[j].left - o.currentPos[i].left < o.ElementWidth) ; j++) {
+            o.TestedTop = Math.max(o.TestedTop, o.currentPos[j].top);
+          }
+          var NewScore = o.scoreFunction(o);
+          if (NewScore > o.BestScore) {
+            o.IndexStart = i;
+            o.IndexEnd = j;
+            o.ElementTop = o.TestedTop;
+            o.BestScore = NewScore;
+          }
+        }
+
+        var curpos = getPosition(element),
+          pos = {
+            left: o.currentPos[o.IndexStart].left + o.xPadding,
+            top: o.ElementTop + o.yPadding
+          };
+        //console.log(element.id + " " + pos.left + " " + pos.top);
+        if (curpos.top != pos.top || curpos.left != pos.left) {
+          var aniObj = {
+            el: element,
+            f: 'style',
+            d: 0
+          };
+
+          if (o._animate && !element.classList.contains("noanim")) {
+            var curoffset = getOffset(element),
+
+              offset = {
+                left: pos.left + (curoffset.left - curpos.left),
+                top: pos.top + (curoffset.top - curpos.top)
+              };
+
+            if ((curoffset.top + o.ElementHeight > o.viewportY && curoffset.top < o.viewportYH ||
+              offset.top + o.ElementHeight > o.viewportY && offset.top < o.viewportYH)) {
+
+              aniObj.f = 'animate'
+              aniObj.d = o.currentDelay;
+
+              ++(o.iteration);
+              o.currentDelay += o.elementDelay;
+            }
+          }
+          aniObj.style = pos;
+          o.styleQueue.push(aniObj);
+        }
+        --(o.iteration);
+
+        var LastSpanTop = o.currentPos[o.IndexEnd - 1].top,
+          LastSpanRight = o.currentPos[o.IndexEnd] ? o.currentPos[o.IndexEnd].left : o.containerWidth,
+          ElementRight = o.currentPos[o.IndexStart].left + o.ElementWidth;
+
+        o.currentPos[o.IndexStart].top = o.ElementTop + o.ElementHeight;
+
+        if ((o.ElementTop + o.ElementHeight) > containerHeight) containerHeight = o.ElementTop + o.ElementHeight;
+
+        if (ElementRight < LastSpanRight) {
+          o.currentPos.splice(o.IndexStart + 1, o.IndexEnd - o.IndexStart - 1, {
+            left: ElementRight,
+            top: LastSpanTop
+          });
+        } else {
+          o.currentPos.splice(o.IndexStart + 1, o.IndexEnd - o.IndexStart - 1);
+        }
+      })
+
+      // set container height to cover all cards
+     
+      //console.log("container " + containerHeight);
+      container.style.height = containerHeight + "px";
+    },
+
+    //Set styles of cards as required
+    prepareElements: function (container, elements, o) {
+      for (var i = 0; i < elements.length; i++) {
+        if (isVisible(elements[i])) {
+          elements[i].style.display = 'block';
+        }
+        elements[i].style.position = 'absolute';
+      }
+    },
+
+    //Apply calculated css styles to elements
+    applyStyles: function (o) {
+      var obj;
+      for (var i = 0, len = o.styleQueue.length; i < len; i++) {
+        obj = o.styleQueue[i];
+        if (obj.f == 'animate') {
+          this.animateCard(obj.el, obj.style, obj.d, o.animationOptions);
+        } else {
+          this.setStyle(obj.el, obj.style);
+        }
+      }
+    },
+
+    setElementWidth: function (Elements, o) {
+      if (o.cardMinWidth != 0 && !o.forceWidth) {
+
+        // on large screens make cards a little wider by default, should maybe become configuration options
+        if (o.containerWidth > 1000 && o.cardMinWidth < 380) o.cardMinWidth = 380;
+
+        var cw = o.containerWidth - o.paddingLeft - o.paddingRight; // container width
+        //var cmw = (this.getBoundingClientRect().width > o.cardWidth) ? o.cardWidth : o.cardMinWidth;
+        var cmw = (this.getBoundingClientRect().width < o.cardMinWidth) ? o.cardMinWidth : o.cardWidth;
+
+        var cwo = getOuterWidth(Elements[0], true) - getWidth(Elements[0]);
+
+        var cols = Math.floor(cw / o.cardMinWidth); // number of card cols to show
+        if (cols < 1) cols = 1;
+        if (cw < o.cardMinWidth) cw = o.cardMinWidth;
+
+        // *todo* layout ignores maxCols/cols - so cols need to be added or maxCols should be removed
+        //if (o.maxCols && cols > o.maxCols) cols = o.maxCols;
+
+        var ocw = Math.floor(cw / cols); // outer card width
+        if (ocw > cmw) ocw = cmw;
+
+        o.currentCardWidth = ocw - cwo; // inner width of a card
+        o.currentContainerMargin = Math.floor((o.containerWidth - (ocw * cols)) / 2);
+        o.currentCardElementWidth = ocw;
+
+        this.$.cards.style.marginLeft = o.currentContainerMargin + "px";
+        this.$.cards.style.marginRight = o.currentContainerMargin + "px";
+
+        // console.log("setElementWidth: cols " + cols + ", cw " + cw + ", cmw " + cmw + ", ocw " + ocw + ", cCM " + o.currentContainerMargin + ", cCW " + o.currentCardWidth);
+
+        for (var i = 0; i < Elements.length; i++) {
+          Elements[i].style.width = o.currentCardWidth + "px";
+        }
+
+
+      }
+    },
+
+    preparePositionsOptions: function (container, o) {
+      o.containerWidth = getWidth(container) + (2 * o.currentContainerMargin);
+
+      o.currentPos = !isEmpty(o.contentToAppend) && this.cardLayoutPos ? this.cardLayoutPos : [{
+        left: 0,
+        top: 0
+      }];
+
+      o.xPadding = stylePropToInt(container.style.paddingLeft);
+      o.yPadding = stylePropToInt(container.style.paddingTop);
+
+      o.paddingLeft = stylePropToInt(container.style.paddingLeft);
+      o.paddingRight = stylePropToInt(container.style.paddingRight);
+      o.viewportY = window.scrollY;
+      o.viewportYH = o.viewportY + window.screen.height;
+    },
+
+    positionAll: function (container, o) {
+      //console.log("cardlayout-positionAll");
+
+      this._active = true;
+
+      if (isEmpty(o.contentToAppend)) {
+        //var Elements = o.selector ? container.children.array(o.selector) : container.children;
+
+        // Converting HtmlCollection to array
+        var childArray = [].slice.call(o.selector ? container.querySelectorAll(o.selector) : container.children);
+        var Elements = childArray;
+      } else {
+        var Elements = o.selector ? o.contentToAppend.filter(o.selector) : o.contentToAppend;
+      }
+
+      o.ElementsCount = Elements.length;
+      if (!o.ElementsCount) {
+        this.cardLayoutPos = null;
+        if (typeof (o.callback == "function")) {
+          o.callback(o);
+        }
+
+        if (o._animate && o.containerAnimate) {
+          container.animate({
+            height: "0px"
+          }, {
+            delay: 0,
+            duration: 100,
+            fill: 'forwards'
+          });
+        } else {
+          container.style.height = "0px";
+        }
+
+        return container;
+      }
+
+      var pos = container.style.position || "static";
+
+      this.preparePositionsOptions(container, o);
+      this.setElementWidth(Elements, o);
+
+      o.iteration = Elements.length;
+      o.currentDelay = 0;
+      o.styleQueue = [];
+
+      this.debounce('positionCards', function () {
+
+        //console.log("cardlayout-positionCards");
+        o.animationOptions.complete = function () {
+          if (--(o.iteration) <= 0) o.callback(o);
+        };
+
+        this.prepareElements(container, Elements, o);
+        this.calculatePositions(container, Elements, o);
+        this.applyStyles(o);
+
+        var CalculatedCSS = {};
+
+        CalculatedCSS.visibility = "visible";
+
+        if (pos == 'static') {
+          CalculatedCSS.position = 'relative';
+        }
+
+        if (o.forceWidth && o.containerWidthStep > 0) {
+          CalculatedCSS.width = o.containerWidthStep * (parseInt(getWidth(container) / o.containerWidthStep, 10))
+        }
+
+        this.setStyle(container, CalculatedCSS);
+
+        var Tops = new Array(o.currentPos.length);
+        for (var i = 0; i < o.currentPos.length; i++) {
+          Tops[i] = o.currentPos[i].top;
+        }
+
+        CalculatedCSS = {
+          height: Math.max.apply(Math, Tops)
+        };
+
+        if (o._animate && o.containerAnimate) {
+          this.animateCard(container, CalculatedCSS, 0, o.animationOptions);
+        } else {
+          this.setStyle(container, CalculatedCSS);
+        }
+
+        if (o.iteration <= 0) o.callback(o);
+
+        this.cardLayoutPos = o.currentPos;
+
+        Elements.forEach(function (elem) {
+          elem.classList.remove("hidden");
+        });
+
+
+        this.async(function () {
+          window.X = true;
+          this.notifyResize();
+        }, 1);
+
+        return container;
+      }, 200);
+    },
+
+    resetElementsStyle: function (container, o) {
+      var Elements;
+
+      if (isEmpty(o.contentToAppend)) {
+        //var Elements = o.selector ? container.children.array(o.selector) : container.children;
+        var Elements = o.selector ? container.querySelectorAll(o.selector) : container.children;
+      } else {
+        var Elements = o.selector ? o.contentToAppend.filter(o.selector) : o.contentToAppend;
+      }
+
+      Elements.forEach(function (elem) {
+        elem.style.cssText = "";
+      });
+    },
+
+    atLayoutCardDefaults: {
+      selector: '', // .at-card optional CSS selector for all cards
+      cardWidth: 480, // outerwidth of one card column
+      cardMinWidth: 316,
+      currentCardWidth: 0,
+      maxCols: 3,
+      animate: true,
+      elementDelay: 0,
+      containerResize: true,
+      containerAnimate: false,
+      customEvents: '',
+      persistentCallback: false,
+      forceWidth: false,
+      containerWidthStep: 1,
+      currentContainerMargin: 0,
+      loadCheckSelector: ':not(.ignore-load-check)',
+      scoreFunction: function (o) {
+        return -(o.TestedTop);
+      }
+    },
+
+    reset: {
+      animationOptions: {
+        complete: function () { }
+      },
+      callback: function () { },
+      contentToAppend: {}
+    },
+
+    attached: function () {     
+
+      this.async(this.notifyResize, 1);
+    },
+
+    ready: function (options) {
+
+      var container = this.$.cards,
+        o = this.setupOptions(container, options),
+        c = this.newContent(o.contentToAppend);
+
+      container.style.visibility = "hidden";
+      this.setupContainerBindings(container, o);
+
+      if (c) {
+        container.appendContainer(c);
+        this.positionAll(container, o);
+      } else {
+        this.positionAll(container, o);
+      }
+      return container;
+    }
+  });
+</script>
