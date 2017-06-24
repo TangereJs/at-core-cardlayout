@@ -1,6 +1,6 @@
 {
   "name": "at-core-cardlayout",
-  "version": "0.0.1.184",
+  "version": "0.0.1.198",
   "private": true,
   "dependencies": {
     "tangere": "TangereJs/tangere#master",

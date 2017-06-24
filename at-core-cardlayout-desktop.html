@@ -178,6 +178,10 @@
       cardLayoutTimeout: {
         type: String,
         computed: ""
+      },
+     
+      sizingContainer: {
+        type: Object
       }
     },
     listeners: {
@@ -295,8 +299,7 @@
         options = this.cardLayoutData;
       }
 
-      var container = this.$.cards,
-        o = this.setupOptions(container, options);
+      var container = this.$.cards, o = this.setupOptions(container, options);
       this.positionAll(container, o);
 
       return container;
@@ -562,8 +565,9 @@
         if (o.containerWidth > 1000 && o.cardMinWidth < 380) o.cardMinWidth = 380;
 
         var cw = o.containerWidth - o.paddingLeft - o.paddingRight; // container width
-        //var cmw = (this.getBoundingClientRect().width > o.cardWidth) ? o.cardWidth : o.cardMinWidth;
-        var cmw = (this.getBoundingClientRect().width < o.cardMinWidth) ? o.cardMinWidth : o.cardWidth;
+       
+        //var cmw = (this.getBoundingClientRect().width < o.cardMinWidth) ? o.cardMinWidth : o.cardWidth;
+        var cmw = (o.containerWidth < o.cardMinWidth) ? o.cardMinWidth : o.cardWidth;
 
         var cwo = getOuterWidth(Elements[0], true) - getWidth(Elements[0]);
 
@@ -595,8 +599,14 @@
     },
 
     preparePositionsOptions: function (container, o) {
-      o.containerWidth = getWidth(container) + (2 * o.currentContainerMargin);
-
+     
+      if (this.sizingContainer) {
+        // use outer Container width if available
+        o.containerWidth = getWidth(this.sizingContainer);
+      } else {
+        o.containerWidth = getWidth(container) + (2 * o.currentContainerMargin);
+      }
+  
       o.currentPos = !isEmpty(o.contentToAppend) && this.cardLayoutPos ? this.cardLayoutPos : [{
         left: 0,
         top: 0

@@ -22,6 +22,10 @@
         cardLayoutData: {
           type: String,
           value: ""
+        },
+        // sizing Container
+        sizingContainer: {
+          type: Object
         }
       },
 
@@ -34,15 +38,18 @@
       },
 
       append: function (Elements) {
+        if (!this._cards.sizingContainer) this._cards.sizingContainer = this.sizingContainer;
         return this._cards.append(Elements);
       },
 
       appendContainer: function (options) {
         debugger;
+        if (!this._cards.sizingContainer) this._cards.sizingContainer = this.sizingContainer;
         return container;
       },
 
       updateLayout: function (options) {
+        if (!this._cards.sizingContainer) this._cards.sizingContainer = this.sizingContainer;
         return this._cards.updateLayout(options);
       },
 
