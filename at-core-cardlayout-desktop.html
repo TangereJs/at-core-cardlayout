@@ -306,7 +306,7 @@
     },
 
     updateLayout: function(options) {
-
+  
       this._options = options;
 
       this.debounce('updateLayout', function () {
@@ -588,6 +588,7 @@
         this.$.cards.style.marginLeft = o.currentContainerMargin + "px";
         this.$.cards.style.marginRight = o.currentContainerMargin + "px";
 
+        //if (o.currentContainerMargin < 0) debugger;
         // console.log("setElementWidth: cols " + cols + ", cw " + cw + ", cmw " + cmw + ", ocw " + ocw + ", cCM " + o.currentContainerMargin + ", cCW " + o.currentCardWidth);
 
         for (var i = 0; i < Elements.length; i++) {
@@ -599,14 +600,16 @@
     },
 
     preparePositionsOptions: function (container, o) {
-     
+
       if (this.sizingContainer) {
         // use outer Container width if available
         o.containerWidth = getWidth(this.sizingContainer);
       } else {
         o.containerWidth = getWidth(container) + (2 * o.currentContainerMargin);
       }
-  
+      
+      if (o.containerWidth <= 0) o.containerWidth = getWidth(document.body);
+
       o.currentPos = !isEmpty(o.contentToAppend) && this.cardLayoutPos ? this.cardLayoutPos : [{
         left: 0,
         top: 0
