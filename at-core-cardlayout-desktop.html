@@ -194,12 +194,16 @@
       //console.log("card layout iron resize");
     },
 
-    _onResize: function (e) {      
+    _onResize: function (e) {
+      
       if (this._cw != e.detail.value.width) {
         if (this._cw || this._active) {
-          // changed width detected
-          this.updateLayout();
-          console.log("_onResize updateLayout after detected resize");
+          console.log("_onResize updateLayout detected resize");
+          this.debounce('cardLayout', function () {
+            // changed width detected
+            this.updateLayout();
+            console.log("_onResize updateLayout after detected resize");           
+          }, 300);
         }
         this._cw = e.detail.value.width;
       }
@@ -588,7 +592,6 @@
         this.$.cards.style.marginLeft = o.currentContainerMargin + "px";
         this.$.cards.style.marginRight = o.currentContainerMargin + "px";
 
-        //if (o.currentContainerMargin < 0) debugger;
         // console.log("setElementWidth: cols " + cols + ", cw " + cw + ", cmw " + cmw + ", ocw " + ocw + ", cCM " + o.currentContainerMargin + ", cCW " + o.currentCardWidth);
 
         for (var i = 0; i < Elements.length; i++) {
@@ -606,9 +609,12 @@
         o.containerWidth = getWidth(this.sizingContainer);
       } else {
         o.containerWidth = getWidth(container) + (2 * o.currentContainerMargin);
+      }   
+
+
+      if (o.containerWidth <= 0) {        
+        o.containerWidth = getWidth(document.body);
       }
-      
-      if (o.containerWidth <= 0) o.containerWidth = getWidth(document.body);
 
       o.currentPos = !isEmpty(o.contentToAppend) && this.cardLayoutPos ? this.cardLayoutPos : [{
         left: 0,
