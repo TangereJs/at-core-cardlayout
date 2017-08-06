@@ -29,6 +29,18 @@
         -ms-user-select: none;
       }
 
+      /* -- test desktop hover border -- 
+      .card.now.desktop {
+        background-color: transparent !important;
+        box-shadow: none !important;
+      }
+
+      .card.now.desktop:hover {
+        background-color: white !important;
+        box-shadow: rgba(0, 0, 0, 0.098) 0px 2px 4px, rgba(0, 0, 0, 0.1) 0px 0px 3px !important;
+      }
+      */
+
       .cardDelete {
         transition: all 0.2s ease-in-out;
         transform: scale(0.2);
@@ -215,10 +227,14 @@
 
 
     _refreshLayout: function () {     
-      this.debounce("refresh-layout", function () {
-        console.log("content-changed _refreshLayout");
-        this.updateLayout();
-      }, 100);
+
+      //console.log("content-changed detected");
+      
+      if(!this.__refreshLayout) this.__refreshLayout = Tangere._throttle(function() {
+          console.log("content-changed _refreshLayout");
+          this.updateLayout();
+        }, 100);
+      this.__refreshLayout();
     },
 
     clear: function () {
@@ -313,23 +329,39 @@
   
       this._options = options;
 
-      this.debounce('updateLayout', function () {
+      if (!this.__updateLayout) this.__updateLayout = Tangere._throttle(function () {
+        console.log("updateLayout");
+          this._updateLayout(options);
+          console.log("updateLayout 1");
 
+          this.async(function () {
+            this._updateLayout(this.options);
+            console.log("updateLayout 2");
+          }, 400);
+
+          this.async(function () {
+            this._updateLayout(this.options);
+            console.log("updateLayout 3");
+          }, 1200);
+      }, 100);
+      this.__updateLayout();
+
+      //this.debounce('updateLayout', function () {
         
-        this._updateLayout(options);
-        console.log("updateLayout 1");
+      //  this._updateLayout(options);
+      //  console.log("updateLayout 1");
 
-        this.async(function () {
-          this._updateLayout(this.options);
-          console.log("updateLayout 2");
-        }, 400);
+      //  this.async(function () {
+      //    this._updateLayout(this.options);
+      //    console.log("updateLayout 2");
+      //  }, 400);
 
-        this.async(function () {
-          this._updateLayout(this.options);
-          console.log("updateLayout 3");
-        }, 1200);
+      //  this.async(function () {
+      //    this._updateLayout(this.options);
+      //    console.log("updateLayout 3");
+      //  }, 1200);
 
-      },100);
+      //},100);
 
     },
 

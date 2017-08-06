@@ -224,12 +224,17 @@
     },
 
 
-    _refreshLayout: function () {     
-      this.debounce("refresh-layout", function () {
+    _refreshLayout: function () {
+
+      //console.log("content-changed detected");
+
+      if (!this.__refreshLayout) this.__refreshLayout = Tangere._throttle(function () {
         console.log("content-changed _refreshLayout");
         this.updateLayout();
       }, 100);
+      this.__refreshLayout();
     },
+
 
     clear: function () {
       var container = this.$.cards;
