@@ -29,10 +29,17 @@
         -ms-user-select: none;
       }
 
-
-      .cardContainer {
-        margin: 16px 8px 0 8px;  
+      /* -- test desktop hover border -- 
+      .card.now.desktop {
+        background-color: transparent !important;
+        box-shadow: none !important;
       }
+
+      .card.now.desktop:hover {
+        background-color: white !important;
+        box-shadow: rgba(0, 0, 0, 0.098) 0px 2px 4px, rgba(0, 0, 0, 0.1) 0px 0px 3px !important;
+      }
+      */
 
       .cardDelete {
         transition: all 0.2s ease-in-out;
@@ -50,38 +57,9 @@
         transition: none;
         cursor: move !important;
       }
-
-      #cards {
-        width: 100%;        
-        column-count: 1;
-      }
-
-      .card {
-        display: block;   
-        max-width: 512px;       
-      }
-      
-      
-      #container {
-        margin: 0 auto;
-      }
-      
-      #container:before, #container:after {
-          content: '';
-          display: table;
-      }
-      
-      #container:after {
-          clear: both;
-      }
-      
-      .column {
-          float: left;
-      }
-      
     </style>
     <at-core-resize-sensor id="resizeSensor" on-resize-sensed="_onResize"></at-core-resize-sensor>
-    <div id="container" on-content-changed="_refreshLayout"></div>
+    <div id="cards" on-content-changed="_refreshLayout"></div>
   </template>
 </dom-module>
 
@@ -213,22 +191,10 @@
         type: String,
         computed: ""
       },
-      minColWidth: {
-        type: Number,
-        value: 320
-      },
-      columns: {
-        type: Array,
-        value: []
-      },
-      boxes: {
-        Type: Array,
-        value: []
-      },
-      masonry: {
-        type: Boolean,
-        value: false
-      }      
+     
+      sizingContainer: {
+        type: Object
+      }
     },
     listeners: {
       'iron-resize': '_onIronResize',
@@ -240,172 +206,92 @@
       //console.log("card layout iron resize");
     },
 
-    _onResize: function (e) {     
-      this._layout(true);
-    },
-    
-    // compute the number of columns under current setting
-    _computeNumberOfColumns: function() {
-      var num = Math.floor(this.clientWidth / this.minColWidth);
-      num = num || 1; // at least one column
-
-      return num;
-    },
-
-    // init enough columns and set the width
-    _initColumns: function(num) {
-      if(num > 0) {
-        // create column div
-        this.columns = [];
-        var width = (100 / num) + '%';
-        while(num--) {
-          var column = document.createElement('div');
-          column.className = 'column';
-          column.style.width = width;
-          this.columns.push(column);
-
-          Polymer.dom(this.$.container).appendChild(column);
+    _onResize: function (e) {
+      
+      if (this._cw != e.detail.value.width) {
+        if (this._cw || this._active) {
+          console.log("_onResize updateLayout detected resize");
+          this.debounce('cardLayout', function () {
+            // changed width detected
+            this.updateLayout();
+            console.log("_onResize updateLayout after detected resize");           
+          }, 300);
         }
+        this._cw = e.detail.value.width;
       }
     },
-          
-    // get the index of shortest column
-    _getMinHeightIndex: function() {
-      if(this.columns && this.columns.length > 0) {
-        var min = this.columns[0].clientHeight, index = 0;
-        for (var i = 1; i < this.columns.length; i++) {
-          var columnElem = this.columns[i];
-          if(columnElem.clientHeight < min) {
-            min = columnElem.clientHeight;
-            index = i;
-          }
-        }
-        return index;
-      }
-      else return -1;
-    },
-  
-    // get the index of next column
-    _getNextIndex: function() {
-      if(this.columns && this.columns.length > 0) {       
-        var min = this.columns[0].children.length, index = 0;
-        for (var i = 1; i < this.columns.length; i++) {
-          var columnElem = this.columns[i];
-          if(columnElem.children.length < min) {
-            min = columnElem.children.length;
-            index = i;
-          }
-        }
-        return index;
-      }
-      else return -1;
-    },     
-          
-          
-    // layout core
-    _layout: function(force) {
-      var num = this._computeNumberOfColumns();
-      var cols = this.columns.length;
-
-      if(force || num != cols) {
-        // remove old column
-        for (var i = 0; i < this.columns.length; i++) {
-          var columnElem = this.columns[i];
-          this.$.container.removeChild(columnElem);
-        }
-
-        // init new column
-        this._initColumns(num);
-        
-
-        this.$.container.style.maxWidth = (512 * num) + "px";
-
- 
-        // compose
-        for (var i = 0, l = this.boxes.length; i < l; i++) {
-          var box = this.boxes[i];
-          this._addBox(box);
-        }
-      }
-    },
-
-    // add a new box to grid
-    _addBox: function(elem) {
-        // push if new box
-      if(this.boxes.indexOf(elem) < 0) this.boxes.push(elem);
-
-      var columnIndex = 0;
-      if(this.masonry) {
-        columnIndex =this._getMinHeightIndex();
-      } else {
-        columnIndex = this._getNextIndex();
-      }
-      if(columnIndex > -1) {
-        var column = this.columns[columnIndex];
-        Polymer.dom(column).appendChild(elem);
-      }
-    },
-
 
     isArray: function (card) {
       return Object.prototype.toString.call(card) === '[object Array]';
     },
 
 
-    _refreshLayout: function () {
+    _refreshLayout: function () {     
 
       //console.log("content-changed detected");
-
-      if (!this.__refreshLayout) this.__refreshLayout = Tangere._throttle(function () {
-        console.log("content-changed _refreshLayout");
-        this.updateLayout();
-      }, 100);
+      
+      if(!this.__refreshLayout) this.__refreshLayout = Tangere._throttle(function() {
+          console.log("content-changed _refreshLayout");
+          this.updateLayout();
+        }, 100);
       this.__refreshLayout();
     },
-
 
     clear: function () {
       var container = this.$.cards;
       container.innerHTML = "";
-      //container.style.height = "0px";
-    },
-      
-    _init: function() {
-      if(this.__init) return;
-      this.__init = true;
-      this._layout();
+      container.style.height = "0px";
     },
 
     append: function (Elements) {
       var container = this.$.cards;
- 
-      this._init();
-      
+
       if (!(this.isArray(Elements))) {
         Elements = [Elements];
       }
 
-    
       Elements.forEach(function (elem) {
-      
-        this._addBox(elem);
-        /*
-        elem.style.position = "relative";
-        var div = document.createElement("div");
-        div.classList = "cardContainer";
-        div.id = elem.id;
-        elem.id = "c-" + elem.id;
-        div.sort = elem.sort;
-        div.version = elem.version;
-        div.appendChild(elem);
-        Polymer.dom(container).appendChild(div);
-         */
-      }.bind(this));
-     
-      
-      
+        elem.classList.add("hidden");
+        //container.appendChild(elem);
+        Polymer.dom(container).appendChild(elem);
+      });
 
       Polymer.dom.flush();
+
+      var o = this.setupOptions(container, this.cardLayoutData);
+      o.currentPos = this.cardLayoutPos;
+      o.styleQueue = [];
+
+      this.preparePositionsOptions(container, o);
+      this.setElementWidth(container.children, o);
+   
+      // this.async(function () {
+
+        this.prepareElements(container, Elements, o);
+        //this.calculatePositions(container, container.children.array(), o);
+
+        // Converting HtmlCollection to array
+        var childArray = [].slice.call(container.children);
+        this.calculatePositions(container, childArray, o);
+        this.applyStyles(o);
+
+        var CalculatedCSS = {};
+        CalculatedCSS.visibility = "visible";
+        if (container.style.position || "static" == 'static') {
+          CalculatedCSS.position = 'relative';
+        }
+
+        if (o.forceWidth && o.containerWidthStep > 0) {
+          CalculatedCSS.width = o.containerWidthStep * (parseInt(getWidth(container) / o.containerWidthStep, 10))
+        }
+
+        this.setStyle(container, CalculatedCSS);
+
+        this.cardLayoutPos = o.currentPos;
+
+        Elements.forEach(function (elem) {
+          elem.classList.remove("hidden");
+        });
 
         return container;
       //}, 250);
@@ -426,8 +312,56 @@
       return container;
     },
 
-    updateLayout: function (options) {
+    _updateLayout: function (options) {
       console.log("cardlayout updateLayout");
+
+      if (!options) {
+        options = this.cardLayoutData;
+      }
+
+      var container = this.$.cards, o = this.setupOptions(container, options);
+      this.positionAll(container, o);
+
+      return container;
+    },
+
+    updateLayout: function(options) {
+  
+      this._options = options;
+
+      if (!this.__updateLayout) this.__updateLayout = Tangere._throttle(function () {
+        console.log("updateLayout");
+          this._updateLayout(options);
+          console.log("updateLayout 1");
+
+          this.async(function () {
+            this._updateLayout(this.options);
+            console.log("updateLayout 2");
+          }, 400);
+
+          this.async(function () {
+            this._updateLayout(this.options);
+            console.log("updateLayout 3");
+          }, 1200);
+      }, 100);
+      this.__updateLayout();
+
+      //this.debounce('updateLayout', function () {
+        
+      //  this._updateLayout(options);
+      //  console.log("updateLayout 1");
+
+      //  this.async(function () {
+      //    this._updateLayout(this.options);
+      //    console.log("updateLayout 2");
+      //  }, 400);
+
+      //  this.async(function () {
+      //    this._updateLayout(this.options);
+      //    console.log("updateLayout 3");
+      //  }, 1200);
+
+      //},100);
 
     },
 
@@ -533,7 +467,7 @@
 
     //Calculate card positions and return as array
     calculatePositions: function (container, elements, o) {
-      debugger;
+
       var containerHeight = 0;
       
       elements.forEach(function (element, i) {
@@ -667,8 +601,9 @@
         if (o.containerWidth > 1000 && o.cardMinWidth < 380) o.cardMinWidth = 380;
 
         var cw = o.containerWidth - o.paddingLeft - o.paddingRight; // container width
-        //var cmw = (this.getBoundingClientRect().width > o.cardWidth) ? o.cardWidth : o.cardMinWidth;
-        var cmw = (this.getBoundingClientRect().width < o.cardMinWidth) ? o.cardMinWidth : o.cardWidth;
+       
+        //var cmw = (this.getBoundingClientRect().width < o.cardMinWidth) ? o.cardMinWidth : o.cardWidth;
+        var cmw = (o.containerWidth < o.cardMinWidth) ? o.cardMinWidth : o.cardWidth;
 
         var cwo = getOuterWidth(Elements[0], true) - getWidth(Elements[0]);
 
@@ -700,7 +635,18 @@
     },
 
     preparePositionsOptions: function (container, o) {
-      o.containerWidth = getWidth(container) + (2 * o.currentContainerMargin);
+
+      if (this.sizingContainer) {
+        // use outer Container width if available
+        o.containerWidth = getWidth(this.sizingContainer);
+      } else {
+        o.containerWidth = getWidth(container) + (2 * o.currentContainerMargin);
+      }   
+
+
+      if (o.containerWidth <= 0) {        
+        o.containerWidth = getWidth(document.body);
+      }
 
       o.currentPos = !isEmpty(o.contentToAppend) && this.cardLayoutPos ? this.cardLayoutPos : [{
         left: 0,
@@ -718,7 +664,7 @@
 
     positionAll: function (container, o) {
       //console.log("cardlayout-positionAll");
-      debugger;
+
       this._active = true;
 
       if (isEmpty(o.contentToAppend)) {
@@ -871,6 +817,20 @@
 
     ready: function (options) {
 
+      var container = this.$.cards,
+        o = this.setupOptions(container, options),
+        c = this.newContent(o.contentToAppend);
+
+      container.style.visibility = "hidden";
+      this.setupContainerBindings(container, o);
+
+      if (c) {
+        container.appendContainer(c);
+        this.positionAll(container, o);
+      } else {
+        this.positionAll(container, o);
+      }
+      return container;
     }
   });
 </script>

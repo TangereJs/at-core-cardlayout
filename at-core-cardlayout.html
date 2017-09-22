@@ -26,7 +26,11 @@
         // sizing Container
         sizingContainer: {
           type: Object
-        }
+        },
+        masonry: {
+          type: Boolean,
+          value: false
+        }  
       },
 
       clear: function () {
@@ -71,7 +75,8 @@
         var container = "at-core-cardlayout-desktop";
         if (Tangere.session.browser.mobile || Tangere.session.browser.extension) container = "at-core-cardlayout-mobile";
 
-        var cards = document.createElement(container);       
+        var cards = document.createElement(container);  
+        cards.masonry = this.masonry;
         Polymer.dom(this).appendChild(cards);
         Polymer.dom.flush();
         this._cards = cards;
