@@ -4,6 +4,8 @@
 <link rel="import" href="../iron-resizable-behavior/iron-resizable-behavior.html">
 <link rel="import" href="../at-core-resize-sensor/at-core-resize-sensor.html">
 
+<script src="html.sortable.js"></script>
+
 <dom-module id="at-core-cardlayout-desktop">
 
   <template>
@@ -58,7 +60,12 @@
 
       .card {
         display: block;   
-        max-width: 512px;       
+        max-width: 512px;      
+
+        /* https://bugs.chromium.org/p/chromium/issues/detail?id=605119 */
+        position: relative;
+        z-index:0;
+         
       }
       
       
@@ -77,6 +84,7 @@
       
       .column {
           float: left;
+          min-height: 200px;
       }
       
     </style>
@@ -124,12 +132,19 @@
       autoSort: {
         type: Boolean,
         value: false
+      },
+      sortable: {
+        type: Boolean,
+        value: false
       }
     },
     listeners: {
       'iron-resize': '_onIronResize',
       'content-changed': '_refreshLayout',
-      'card-changed': '_refreshLayout'
+      'card-changed': '_refreshLayout',
+      'sortstart': '_onSortstart',
+      'sortupdate': '_onSortupdate',
+      'sortstop': '_onSortstop'
     },
 
     _onIronResize: function (e) {
@@ -184,7 +199,7 @@
         var width = (100 / num) + '%';
         while(num--) {
           var column = document.createElement('div');
-          column.className = 'column';
+          column.className = 'column col' + (this.columns.length+1);
           column.style.width = width;
           this.columns.push(column);
 
@@ -224,8 +239,82 @@
       }
       else return -1;
     },     
+         
+   
+    _onSortstart: function (event) {      
+      //this.fire('sort-start', event);
+    },
+    _onSortstop: function (event) {
+      //this.fire('sort-stop', event);
+    },
+
+    _onSortupdate: function (event) {
+      
+      // build new descending sort order
+      var max = (this.boxes.length + 1) * 100;
+
+      for (let col = 0; col < this.columns.length; col++) {
+        for(let row=0; row < this.columns[col].children.length; row++) {
+          let item = this.columns[col].children[row];
+          item.sort = max - (row * 100) - col;
+          //console.log("sort " + row + " " + col + " " + item.id + " " + item.sort);
+        }
+      }
+
+        var _sortedIds = "";
+        var ids = [];
+        // sort array of children descending
+        this._sortBoxes();
+
+        for (let i = 0; i < this.boxes.length; i++) {
+          _sortedIds = _sortedIds + "," + this.boxes[i].id;
+          ids.push(this.boxes[i].id);
+        }
+        //console.log("sort old " + this._sorted);
+        //console.log("sort new " + _sortedIds);
+
+        if (this._sorted != _sortedIds) {
+          this._sorted = _sortedIds;
+          this.fire("sorted", { idlist: ids }, { bubbles: true });
+        }
+
+      //this.fire('sort-update', event);
+    },
           
-          
+    _sortBoxes: function() {
+      // sort array of children descending
+      this.boxes.sort(function (a, b) {
+
+        if (a.sort > b.sort) {
+          return -1;
+        }
+        if (a.sort < b.sort) {
+          return 1;
+        }
+
+        //If sort values are equal, cards should be sorted per their versions
+        if (a.version && b.version) {
+          if (a.version > b.version) {
+            return -1;
+          }
+          if (a.version < b.version) {
+            return 1;
+          }
+        }
+
+        //If verions values are also equal, sort ascending by id 
+        if (a.id > b.id) {
+          return 1;
+        }
+        if (a.id < b.id) {
+          return -1;
+        }
+
+        // a must be equal to b
+        return 0;
+      });
+    },
+
     // layout core
     _layout: function(force) {
       var num = this._computeNumberOfColumns();
@@ -235,34 +324,7 @@
       if (this.autoSort) {
 
         // sort array of children descending
-        this.boxes.sort(function (a, b) {
-
-          if (a.sort > b.sort) {
-            return -1;
-          }
-          if (a.sort < b.sort) {
-            return 1;
-          }
-
-          //If sort values are equal, cards should be sorted per their versions
-          if (a.version > b.version) {
-            return -1;
-          }
-          if (a.version < b.version) {
-            return 1;
-          }
-
-          //If verions values are also equal, sort by id 
-          if (a.id > b.id) {
-            return 1;
-          }
-          if (a.id < b.id) {
-            return -1;
-          }
-
-          // a must be equal to b
-          return 0;
-        });
+        this._sortBoxes();
 
         for (let i = 0; i < this.boxes.length; i++) {
           _sortedIds = _sortedIds + "," + this.boxes[i].id;
@@ -271,7 +333,7 @@
         if (!this._sorted) this._sorted = _sortedIds;
 
         if (_sortedIds.indexOf(this._sorted) != 0) {
-          console.log("sort order changed");
+          //console.log("sort order changed");        
           force = true;          
         }
         this._sorted = _sortedIds;
@@ -279,11 +341,16 @@
 
       if (!this._forcedLayout && force && this.boxes.length > 2 * num) {
         this._forcedLayout = force;
-        console.log("first forced layout");
+        //console.log("first forced layout");        
       }
 
-      if(force || num != cols) {
-        // remove old column
+      if (force || num != cols) {
+
+        // remove sortable
+        this._relayouting = true; // delay adding new sortables
+        if (this.sorable) this._sortable_destroy();
+
+        // remove old columns
         for (var i = 0; i < this.columns.length; i++) {
           var columnElem = this.columns[i];
           this.$.container.removeChild(columnElem);
@@ -304,6 +371,39 @@
 
 
         Polymer.dom.flush();
+
+        this._relayouting = false;
+        if (this.sortable) this._sortable_init();
+
+
+      }
+    },
+
+    _sortable_init: function () {
+
+      var self = this, sel="", config = {
+        connectWith: 'connected' 
+      };
+
+      for (let i = 0; i < this.columns.length; i++) {
+        if (i > 0) sel = sel + ", ";
+        sel = sel + "#" + this.id + " .col" + (i+1);
+      }
+
+      this._sortable_selector = sel;
+      //console.log("sortable " + sel);
+     
+      //Adding custom children selector function
+      config.getChildren = function (element) {
+        return Polymer.dom(element).children;
+      };
+      this._sortable = sortable(sel, config);
+    },
+
+    _sortable_destroy: function () {
+      if (this._sortable) {
+        sortable(this, 'destroy');
+        delete this._sortable;
       }
     },
 
@@ -322,6 +422,10 @@
       if(columnIndex > -1) {
         var column = this.columns[columnIndex];
         Polymer.dom(column).appendChild(elem);
+      }
+
+      if (this._sortable && !this._relayouting) {       
+        sortable(this._sortable_selector);
       }
     },
 
@@ -349,6 +453,8 @@
       this.boxes = [];
       this._sorted = "";
       this._forcedLayout = false;
+      this._relayouting = false;
+
       
       Polymer.dom(this.$.container).innerHTML = "";      
     },
@@ -360,7 +466,6 @@
     },
 
     append: function (Elements) {
-
  
       var container = this.$.cards;
  
