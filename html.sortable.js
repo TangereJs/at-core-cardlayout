@@ -190,6 +190,11 @@ var _attachGhost = function (event, ghost) {
   if (event.dataTransfer.setDragImage) {
     // *changed* *ma* offset fails in chrome, so just using default drag image has better results
     //event.dataTransfer.setDragImage(ghost.draggedItem, ghost.x, ghost.y)
+
+    // hide ghost image on safari as it is frequently showing sibling content
+    if (navigator.vendor == "Apple Computer, Inc.") {
+      event.dataTransfer.setDragImage(ghost.draggedItem, -99999, -99999)
+    }
   }
 }
 /**
