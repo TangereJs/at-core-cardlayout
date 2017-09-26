@@ -190,10 +190,20 @@ var _attachGhost = function (event, ghost) {
   if (event.dataTransfer.setDragImage) {
     // *changed* *ma* offset fails in chrome, so just using default drag image has better results
     //event.dataTransfer.setDragImage(ghost.draggedItem, ghost.x, ghost.y)
-
+    
     // hide ghost image on safari as it is frequently showing sibling content
     if (navigator.vendor == "Apple Computer, Inc.") {
-      event.dataTransfer.setDragImage(ghost.draggedItem, -99999, -99999)
+      //event.dataTransfer.setDragImage(ghost.draggedItem, -99999, -99999)
+      let img = new Image();
+      if (window._safari_dnd_placeholder) {
+        img = window._safari_dnd_placeholder;
+      } else{
+        let compUrl = "/components/";
+        if (window.ComponentsBase != undefined) compUrl = window.ComponentsBase;
+        img.src = compUrl + 'at-core-cardlayout/ghost.png';        
+        window._safari_dnd_placeholder = img;
+      }
+      event.dataTransfer.setDragImage(img,0,0);
     }
   }
 }
@@ -303,6 +313,9 @@ var _destroySortable = function (sortableElement) {
  * @param {Element} sortableElement a single sortable
  */
 var _enableSortable = function (sortableElement) {
+
+  if (sortableElement.getAttribute("undraggable") != null) return;  // ignore elements with undraggable attribute
+
   var opts = _data(sortableElement, 'opts')
   var items = _filter(_getChildren(sortableElement), opts.items)
   var handles = _getHandles(items, opts.handle)
@@ -675,11 +688,11 @@ var sortable = function (sortableElements, options) {
       dragging.dispatchEvent(_makeEvent('dragend'))
     })
 
-    var debouncedDragOverEnter = _debounce(function (element, pageY) {
+    var debouncedDragOverEnter = _debounce(function (element, pageY, sameList) {
       if (!dragging) {
         return
       }
-
+     // console.log("dnd sameList " + sameList);
       if (items.indexOf(element) !== -1) {
         var thisHeight = parseInt(window.getComputedStyle(element).height)
         var placeholderIndex = _index(placeholder)
@@ -689,17 +702,19 @@ var sortable = function (sortableElements, options) {
         }
 
         // Check if `element` is bigger than the draggable. If it is, we have to define a dead zone to prevent flickering
-        if (thisHeight > draggingHeight) {
+        if (thisHeight > draggingHeight && sameList) {
           // Dead zone?
           var deadZone = thisHeight - draggingHeight
           var offsetTop = _offset(element).top
           if (placeholderIndex < thisIndex &&
               pageY < offsetTop + deadZone) {
+            //console.log("dnd 1 " + placeholderIndex + " " + thisIndex + " " + pageY + " " +  offsetTop + " " + deadZone)
             return
           }
           if (placeholderIndex > thisIndex &&
               pageY > offsetTop + thisHeight - deadZone) {
-            return
+            //console.log("dnd 2")
+            //return
           }
         }
 
@@ -711,6 +726,7 @@ var sortable = function (sortableElements, options) {
           dragging.style.display = 'none'
         }
 
+        //console.log("dnd 3 " + placeholderIndex + " " + thisIndex);
         if (placeholderIndex < thisIndex) {
           _after(element, placeholder)
         } else {
@@ -731,6 +747,7 @@ var sortable = function (sortableElements, options) {
 
     // Handle dragover and dragenter events on draggable items
     var onDragOverEnter = function (e) {
+      
       if (!dragging || !_listsConnected(sortableElement, dragging.parentElement) || _data(sortableElement, '_disabled') === 'true') {
         return
       }
@@ -740,7 +757,7 @@ var sortable = function (sortableElements, options) {
       e.preventDefault()
       e.stopPropagation()
       e.dataTransfer.dropEffect = 'move'
-      debouncedDragOverEnter(this, e.pageY)
+      debouncedDragOverEnter(this, e.pageY, sortableElement === dragging.parentElement)
     }
 
     _on(items.concat(sortableElement), 'dragover', onDragOverEnter)

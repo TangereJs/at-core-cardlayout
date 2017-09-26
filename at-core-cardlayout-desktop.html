@@ -66,7 +66,9 @@
         /* same bug exists in Safari, with no workaround, so ghost image currently completely hidden for Safari */
         position: relative;
         z-index:0;
-      
+             
+
+
       }
       
       
@@ -84,14 +86,20 @@
       }
       
       .column {
-          float: left;
-          min-height: 200px;
-          padding-bottom: 200px;
+          float: left;          
+      }
+
+      .column > :nth-last-child(2) {
+        margin-bottom: 0;
       }
 
       .placeholder {
         border: 2px dashed grey;
         margin: 0 15px 30px 15px;
+      }
+
+      .end {
+        height:300px;
       }
       
     </style>
@@ -210,7 +218,30 @@
           column.style.width = width;
           this.columns.push(column);
 
-          Polymer.dom(this.$.container).appendChild(column);
+          Polymer.dom(this.$.container).appendChild(column);         
+
+          var end = document.createElement("div");
+          //end.style = "height:300px;";
+          end.setAttribute("undraggable", true);
+          end.className = "end end" + (this.columns.length);
+
+          Polymer.dom(column).appendChild(end);
+        }
+      }
+    },
+
+    // add empty div to each column, as drag receiver 
+    _ensureEndDiv: function () {
+      var num = this.columns.length;
+      if (num > 0) {
+        // create column div
+        while (num--) {
+          var column = this.columns[num];
+
+          var end = Polymer.dom(column).querySelector(".end" + (num + 1));
+          
+          Polymer.dom(column).appendChild(end);
+
         }
       }
     },
@@ -256,6 +287,7 @@
     },
 
     _onSortupdate: function (event) {
+
       
       // build new descending sort order
       var max = (this.boxes.length + 1) * 100;
@@ -285,6 +317,8 @@
           this.fire("sorted", { idlist: ids }, { bubbles: true });
         }
 
+
+        this._ensureEndDiv();
       //this.fire('sort-update', event);
     },
           
@@ -386,6 +420,8 @@
       }
     },
 
+    
+
     _sortable_init: function () {
 
       var self = this, sel = "", config = {
@@ -430,7 +466,11 @@
 
       if(columnIndex > -1) {
         var column = this.columns[columnIndex];
-        Polymer.dom(column).appendChild(elem);
+
+        var end = Polymer.dom(this.root).querySelector(".col" + (columnIndex + 1) + " .end" + (columnIndex + 1));
+      
+        //Polymer.dom(column).appendChild(elem);
+        Polymer.dom(column).insertBefore(elem,end);
       }
 
       if (this._sortable && !this._relayouting) {       
@@ -591,6 +631,13 @@
 
     ready: function (options) {
 
+      // safari placeholder image preload
+      let img = new Image();
+      let compUrl = "/components/";
+      if (window.ComponentsBase != undefined) compUrl = window.ComponentsBase;
+      img.src = compUrl + 'at-core-cardlayout/ghost.png';
+
+      window._safari_dnd_placeholder = img;
     }
   });
 </script>
