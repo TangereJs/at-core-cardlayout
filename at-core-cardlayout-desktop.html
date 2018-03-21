@@ -29,11 +29,11 @@
         -moz-user-select: none;
         -ms-user-select: none;
       }
-      
+
       at-core-cardlayout-desktop#workplace-layout .card:hover {
                 box-shadow: 0 2px 10px 0 rgba(0, 0, 0, 0.16), 0 2px 5px 0 rgba(0, 0, 0, 0.26);
       }
-      
+
        at-core-cardlayout-desktop#workplace-layout .card:focus,
        at-core-cardlayout-desktop#workplace-layout .card:active {
          transform: translate(0px; -3px);
@@ -41,7 +41,7 @@
 
 
       .cardContainer {
-        margin: 16px 8px 0 8px;  
+        margin: 16px 8px 0 8px;
       }
 
       .cardDelete {
@@ -62,39 +62,39 @@
       }
 
       #cards {
-        width: 100%;        
+        width: 100%;
         column-count: 1;
       }
 
       .card {
-        display: block;   
-        max-width: 512px;      
+        display: block;
+        max-width: 512px;
 
         /* https://bugs.chromium.org/p/chromium/issues/detail?id=605119 */
         /* same bug exists in Safari, with no workaround, so ghost image currently completely hidden for Safari */
         position: relative;
         z-index:0;
-             
+
 
 
       }
-      
-      
+
+
       #container {
         margin: 0 auto;
       }
-      
+
       #container:before, #container:after {
           content: '';
           display: table;
       }
-      
+
       #container:after {
           clear: both;
       }
-      
+
       .column {
-          float: left;          
+          float: left;
       }
 
       .column > :nth-last-child(2) {
@@ -109,7 +109,7 @@
       .end {
         height:300px;
       }
-      
+
     </style>
     <at-core-resize-sensor id="resizeSensor" on-resize-sensed="_onResize"></at-core-resize-sensor>
     <div id="container" on-content-changed="_refreshLayout"></div>
@@ -199,13 +199,13 @@
       this.boxes.splice(index, 1);
 
       this._layout(true);
-      
+
     },
 
     _onResize: function (e) {
       this._layout();
     },
-    
+
     // compute the number of columns under current setting
     _computeNumberOfColumns: function() {
       var num = Math.floor(this.clientWidth / this.minColWidth);
@@ -226,7 +226,7 @@
           column.style.width = width;
           this.columns.push(column);
 
-          Polymer.dom(this.$.container).appendChild(column);         
+          Polymer.dom(this.$.container).appendChild(column);
 
           var end = document.createElement("div");
           //end.style = "height:300px;";
@@ -238,7 +238,7 @@
       }
     },
 
-    // add empty div to each column, as drag receiver 
+    // add empty div to each column, as drag receiver
     _ensureEndDiv: function () {
       var num = this.columns.length;
       if (num > 0) {
@@ -247,13 +247,13 @@
           var column = this.columns[num];
 
           var end = Polymer.dom(column).querySelector(".end" + (num + 1));
-          
+
           Polymer.dom(column).appendChild(end);
 
         }
       }
     },
-          
+
     // get the index of shortest column
     _getMinHeightIndex: function() {
       if(this.columns && this.columns.length > 0) {
@@ -269,10 +269,10 @@
       }
       else return -1;
     },
-  
+
     // get the index of next column
     _getNextIndex: function() {
-      if(this.columns && this.columns.length > 0) {       
+      if(this.columns && this.columns.length > 0) {
         var min = this.columns[0].children.length, index = 0;
         for (var i = 1; i < this.columns.length; i++) {
           var columnElem = this.columns[i];
@@ -284,10 +284,10 @@
         return index;
       }
       else return -1;
-    },     
-         
-   
-    _onSortstart: function (event) {      
+    },
+
+
+    _onSortstart: function (event) {
       //this.fire('sort-start', event);
     },
     _onSortstop: function (event) {
@@ -296,7 +296,7 @@
 
     _onSortupdate: function (event) {
 
-      
+
       // build new descending sort order
       var max = (this.boxes.length + 1) * 100;
 
@@ -329,7 +329,7 @@
         this._ensureEndDiv();
       //this.fire('sort-update', event);
     },
-          
+
     _sortBoxes: function() {
       // sort array of children descending
       this.boxes.sort(function (a, b) {
@@ -351,7 +351,7 @@
           }
         }
 
-        //If verions values are also equal, sort ascending by id 
+        //If verions values are also equal, sort ascending by id
         if (a.id > b.id) {
           return 1;
         }
@@ -382,15 +382,15 @@
         if (!this._sorted) this._sorted = _sortedIds;
 
         if (_sortedIds.indexOf(this._sorted) != 0) {
-          //console.log("sort order changed");        
-          force = true;          
+          //console.log("sort order changed");
+          force = true;
         }
         this._sorted = _sortedIds;
       }
 
       if (!this._forcedLayout && force && this.boxes.length > 2 * num) {
         this._forcedLayout = force;
-        //console.log("first forced layout");        
+        //console.log("first forced layout");
       }
 
       if (force || num != cols) {
@@ -407,11 +407,11 @@
 
         // init new column
         this._initColumns(num);
-        
+
 
         this.$.container.style.maxWidth = (512 * num) + "px";
 
- 
+
         // layout boxes
         for (var i = 0, l = this.boxes.length; i < l; i++) {
           var box = this.boxes[i];
@@ -428,14 +428,14 @@
       }
     },
 
-    
+
 
     _sortable_init: function () {
 
       var self = this, sel = "", config = {
         forcePlaceholderSize: true,
-        placeholderClass: 'placeholder at-core-cardlayout-desktop',        
-        connectWith: 'connected' 
+        placeholderClass: 'placeholder at-core-cardlayout-desktop',
+        connectWith: 'connected'
       };
 
       for (let i = 0; i < this.columns.length; i++) {
@@ -445,7 +445,7 @@
 
       this._sortable_selector = sel;
       //console.log("sortable " + sel);
-     
+
       //Adding custom children selector function
       config.getChildren = function (element) {
         return Polymer.dom(element).children;
@@ -476,12 +476,12 @@
         var column = this.columns[columnIndex];
 
         var end = Polymer.dom(this.root).querySelector(".col" + (columnIndex + 1) + " .end" + (columnIndex + 1));
-      
+
         //Polymer.dom(column).appendChild(elem);
         Polymer.dom(column).insertBefore(elem,end);
       }
 
-      if (this._sortable && !this._relayouting) {       
+      if (this._sortable && !this._relayouting) {
         sortable(this._sortable_selector);
       }
     },
@@ -512,10 +512,10 @@
       this._forcedLayout = false;
       this._relayouting = false;
 
-      
-      Polymer.dom(this.$.container).innerHTML = "";      
+
+      Polymer.dom(this.$.container).innerHTML = "";
     },
-      
+
     _init: function() {
       if(this.__init) return;
       this.__init = true;
@@ -523,15 +523,15 @@
     },
 
     append: function (Elements) {
- 
+
       var container = this.$.cards;
- 
+
       this._init();
-      
+
       if (!(this.isArray(Elements))) {
         Elements = [Elements];
       }
-    
+
       Elements.forEach(function (elem) {
         console.log("append " + elem.id);
         //if (this.autoSort) {
@@ -541,13 +541,13 @@
         //}
         this._addBox(elem);
       }.bind(this));
-     
-      if (this.autoSort) this._layout();      
+
+      if (this.autoSort) this._layout();
 
 
         return container;
       //}, 250);
-     
+
     },
 
     appendContainer: function (options) {
@@ -632,7 +632,7 @@
       contentToAppend: {}
     },
 
-    attached: function () {     
+    attached: function () {
 
       this.async(this.notifyResize, 1);
     },

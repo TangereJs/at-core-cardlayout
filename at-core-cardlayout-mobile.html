@@ -31,7 +31,7 @@
 
 
       .cardContainer {
-        margin: 16px 8px 0 8px;  
+        margin: 16px 8px 0 8px;
       }
 
       .cardDelete {
@@ -52,7 +52,7 @@
       }
 
       #cards {
-        width: 100%;        
+        width: 100%;
         column-count: 1;
       }
 
@@ -208,7 +208,7 @@
       //console.log("card layout iron resize");
     },
 
-    _onResize: function (e) {      
+    _onResize: function (e) {
       if (this._cw != e.detail.value.width) {
         if (this._cw || this._active) {
           // changed width detected
@@ -265,7 +265,7 @@
 
         return container;
       //}, 250);
-     
+
     },
 
     appendContainer: function (options) {
@@ -391,7 +391,7 @@
     calculatePositions: function (container, elements, o) {
       debugger;
       var containerHeight = 0;
-      
+
       elements.forEach(function (element, i) {
         var j = 0;
 
@@ -488,7 +488,7 @@
       })
 
       // set container height to cover all cards
-     
+
       //console.log("container " + containerHeight);
       container.style.height = containerHeight + "px";
     },
@@ -720,7 +720,7 @@
       contentToAppend: {}
     },
 
-    attached: function () {     
+    attached: function () {
 
       this.async(this.notifyResize, 1);
     },
