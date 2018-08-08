@@ -221,7 +221,7 @@
         var width = (100 / num) + '%';
         while(num--) {
           var column = document.createElement('div');
-          column.className = 'column col' + (this.columns.length+1);
+          this._setClassList(column, 'column col' + (this.columns.length+1));
           column.style.width = width;
           this.columns.push(column);
 
@@ -230,7 +230,7 @@
           var end = document.createElement("div");
           //end.style = "height:300px;";
           end.setAttribute("undraggable", true);
-          end.className = "end end" + (this.columns.length);
+          this._setClassList(end, "end end" + (this.columns.length));
 
           Polymer.dom(column).appendChild(end);
         }
