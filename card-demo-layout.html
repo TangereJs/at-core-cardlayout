@@ -31,7 +31,7 @@
             var newCard = document.createElement("polymer-ipsum");
             newCard.cardPrefix = i+1;
             newCard.chars = ((i % 4) + 1) * 50;
-            newCard.className = "card";
+            this._setClassList(newCard, "card");
 
             console.log("before " + i);
             this.$.cardLayout.append(newCard);
