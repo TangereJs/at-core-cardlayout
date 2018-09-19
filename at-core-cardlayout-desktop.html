@@ -450,7 +450,7 @@
       config.getChildren = function (element) {
         return Polymer.dom(element).children;
       };
-      this._sortable = sortable(sel, config);
+      this._sortable = sortable(this.columns, config);
     },
 
     _sortable_destroy: function () {
@@ -482,7 +482,8 @@
       }
 
       if (this._sortable && !this._relayouting) {
-        sortable(this._sortable_selector);
+        // sortable(this._sortable_selector);
+        sortable(this.columns);
       }
     },
 
