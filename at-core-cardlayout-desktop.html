@@ -70,6 +70,7 @@
       .card {
         display: block;
         max-width: 512px;
+        min-height: 80px;
 
         /* https://bugs.chromium.org/p/chromium/issues/detail?id=605119 */
         /* same bug exists in Safari, with no workaround, so ghost image currently completely hidden for Safari */
@@ -111,14 +112,27 @@
         height:300px;
       }
 
+      .resize-sensor-wrapper {
+        position: relative;
+      }
+
+      .clear-float {
+        clear: both;
+      }
+
     </style>
-    <at-core-resize-sensor id="resizeSensor" on-resize-sensed="_onResize"></at-core-resize-sensor>
-    <div id="container" on-content-changed="_refreshLayout"></div>
+    <div class="resize-sensor-wrapper">
+      <at-core-resize-sensor id="resizeSensor" on-resize-sensed="_onResize"></at-core-resize-sensor>
+      <div class="clear-float"></div>
+      <div>
+        <div id="container" on-content-changed="_refreshLayout"></div>
+      </div>
+    </div>
   </template>
 </dom-module>
 
 <script>
-
+  
   Polymer({
     is: "at-core-cardlayout-desktop",
     behaviors: [
@@ -371,6 +385,8 @@
       var cols = this.columns.length;
       var _sortedIds = "";
 
+      //console.log("layout cols " + num);
+
       if (this.autoSort) {
 
         // sort array of children descending
@@ -424,9 +440,11 @@
 
         this._relayouting = false;
         if (this.sortable) this._sortable_init();
-
-
       }
+      
+      // After all cards have completed rendering we need to tell resize sensor to update itself with the dimensions of cardlayout-desktop element;
+      // not reseting the resize sensor causes the infinite loop problem in EDGE
+      this.$.resizeSensor.reset();
     },
 
 
@@ -536,7 +554,7 @@
       }
 
       Elements.forEach(function (elem) {
-        console.log("append " + elem.id);
+        //console.log("append " + elem.id);
         //if (this.autoSort) {
         //  if (this.boxes.indexOf(elem) < 0) this.boxes.push(elem);
         //} else {
@@ -636,10 +654,9 @@
     },
 
     attached: function () {
-
       this.async(this.notifyResize, 1);
     },
-
+    
     ready: function (options) {
 
       // safari placeholder image preload
