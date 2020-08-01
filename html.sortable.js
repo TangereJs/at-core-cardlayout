@@ -1,4 +1,7 @@
-;(function(root, factory) {
+; (function (root, factory) {
+
+  root.sortable = factory(); // we need Sortable as blogal
+
   if (typeof define === 'function' && define.amd) {
     define([], factory);
   } else if (typeof exports === 'object') {
